@@ -13,9 +13,9 @@ This artifact provides a validator implementation for the [FileVault Validation 
 
 Use cases are
 
-1. Editable Templates' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`)
-1. Editable Templates' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`)
-1. Generic Context-Aware configurations (as found by [`com.adobe.cq.wcm.core.components.internal.services.CaConfigReferenceProvider`](https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java)`)
+1. [Editable templates][page-templates]' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`)
+1. [Editable Templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`)
+1. Generic Context-Aware configurations (as found by [`com.adobe.cq.wcm.core.components.internal.services.CaConfigReferenceProvider`](https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java))
 
 Those are validated through the default value for `includedNodePathPatternsAndTypes`. This default set can be overridden through the settings outlined below.
 
@@ -60,3 +60,4 @@ You can use this validator with the [FileVault Package Maven Plugin][3] in versi
 [2]: https://jackrabbit.apache.org/filevault/validation.html
 [3]: https://jackrabbit.apache.org/filevault-package-maven-plugin/index.html
 [4]: https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/com/adobe/granite/references/ReferenceProvider.html
+[page-templates]: https://experienceleague.adobe.com/docs/experience-manager-65/developing/platform/templates/page-templates-editable.html

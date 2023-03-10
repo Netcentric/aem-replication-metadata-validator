@@ -92,5 +92,5 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action/composite@v2
         with:
           files: |
-            invokler-reports/**/*.xml
+            target/invoker-reports/*.xml
           check_name: Test report (${{ matrix.os }}, JDK ${{ matrix.jdk }})
