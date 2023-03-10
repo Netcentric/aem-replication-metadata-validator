@@ -22,7 +22,7 @@ The following options are supported apart from the default settings mentioned in
 
 Option | Mandatory | Description | Default Value | Since Version
 --- | --- | --- | --- | ---
-`includedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `"<regex>[<primary-type>]`. The given regular expression must match a given node path for the node to be checked for metadata. In addition the node must have the given primary type. | `.*/settings/wcm/[^/]*/initial[cq:Page], .*/settings/wcm/[^/]*/policies[cq:Page], /(apps\|conf)/.*/(sling:configs|settings/cloudconfigs)/.*[cq:Page])` | 1.0.0 
+`includedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `"<regex>[<primary-type>]`. The given regular expression must match a given node path for the node to be checked for metadata. In addition the node must have the given primary type. | `.*/settings/wcm/[^/]*/initial[cq:Page], .*/settings/wcm/[^/]*/policies[cq:Page], /(apps\|conf)/.*/(sling:configs\|settings/cloudconfigs)/.*[cq:Page])` | 1.0.0 
 `strictLastModificationDateCheck` | no | `true` means that nodes without a last modification property should always lead to validation errors. Otherwise they are handled in a lenient fashion like AEM behaves (i.e. assumption is that the modification date is -1 which is older than all replication dates). | `false` | 1.0.0
 
 # Usage with Maven
