@@ -40,9 +40,9 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     private static Map<Pattern, String> createDefaultMap() {
         Map<Pattern, String> map = new HashMap<>();
         // by default: editable templates (as found by com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider)
-        map.put(Pattern.compile(".*/settings/wcm/[^/]*/initial"), NameConstants.NT_PAGE);
+        map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/structure"), NameConstants.NT_PAGE);
         // content policies (as found by com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider)
-        map.put(Pattern.compile(".*/settings/wcm/[^/]*/policies"), NameConstants.NT_PAGE);
+        map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/policies"), NameConstants.NT_PAGE);
         // and regular context-aware configuration (as found by https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java)
         map.put(Pattern.compile("/(apps|conf)/.*/(sling:configs|settings/cloudconfigs)/.*"), NameConstants.NT_PAGE);
         return map;

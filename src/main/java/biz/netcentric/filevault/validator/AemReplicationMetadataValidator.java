@@ -17,6 +17,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.regex.Pattern;
@@ -38,6 +39,8 @@ import org.apache.jackrabbit.vault.validation.spi.ValidationMessage;
 import org.apache.jackrabbit.vault.validation.spi.ValidationMessageSeverity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.day.cq.commons.jcr.JcrConstants;
 import com.day.cq.wcm.api.NameConstants;
@@ -49,6 +52,8 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
     private static final Name NAME_CQ_LAST_PUBLISHED = NameFactoryImpl.getInstance().create(CQ_NAMESPACE_URI, "lastPublished");
     private static final Name NAME_CQ_LAST_MODIFIED =  NameFactoryImpl.getInstance().create(CQ_NAMESPACE_URI, "lastModified");
     private static final Name NAME_JCR_LAST_MODIFIED = NameFactoryImpl.getInstance().create(Property.JCR_LAST_MODIFIED);
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AemReplicationMetadataValidator.class);
 
     private final ValueFactory valueFactory;
     private final @NotNull ValidationMessageSeverity validationMessageSeverity;
@@ -78,20 +83,19 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         if (nodePath.equals(relevantPagePaths.peek() + "/" + NameConstants.NN_CONTENT)) {
             return true;
         }
-        
-        Optional<String> requiredType = includedNodePathsPatternsAndTypes.entrySet().stream()
-                .filter(entry -> entry.getKey().matcher(nodePath).matches())
-                .map(Map.Entry::getValue)
+        Optional<Entry<Pattern, String>> entry = includedNodePathsPatternsAndTypes.entrySet().stream()
+                .filter(e -> e.getKey().matcher(nodePath).matches())
                 .findFirst();
-        if (!requiredType.isPresent()) {
+        if (!entry.isPresent()) {
             return false;
         }
-
-        boolean isNodeRelevant = node.getPrimaryType().equals(requiredType);
+        LOGGER.debug("Potential includedNodePathPatternAndType {}", entry.get().toString());
+        boolean isNodeRelevant = node.getPrimaryType().orElse("").equals(entry.get().getValue());
         if (!isNodeRelevant) {
             return false;
         } else {
-            if (NameConstants.NT_PAGE.equals(requiredType.get())) {
+            if (NameConstants.NT_PAGE.equals(entry.get().getValue())) {
+                LOGGER.debug("Waiting for jcr:content below {}", nodePath);
                 relevantPagePaths.add(nodePath);
                 return false;
             } else {
@@ -111,6 +115,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
     @Nullable
     public Collection<ValidationMessage> validateEnd(@NotNull DocViewNode2 node, @NotNull NodeContext nodeContext, boolean isRoot) {
         if (nodeContext.getNodePath().equals(relevantPagePaths.peek())) {
+            LOGGER.debug("End waiting for jcr:content below {}", nodeContext.getNodePath());
             relevantPagePaths.poll();
         }
         return DocumentViewXmlValidator.super.validateEnd(node, nodeContext, isRoot);
@@ -120,9 +125,9 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         DocViewProperty2 property = Optional.ofNullable(node.getProperty(NAME_CQ_LAST_REPLICATED)
                 .orElseGet(() -> node.getProperty(NAME_CQ_LAST_PUBLISHED)
                 .orElse(null)))
-            .orElseThrow(() -> new IllegalStateException("No replication property found in  " + node.getName()));
+            .orElseThrow(() -> new IllegalStateException("No replication property found"));
         Value lastReplicatedValue = valueFactory.createValue(
-                property.getStringValue().orElseThrow(() -> new IllegalStateException("Empty replication property found in  " + node.getName())));
+                property.getStringValue().orElseThrow(() -> new IllegalStateException("Empty replication property found in  " + property.getName())));
         return lastReplicatedValue.getDate();
     }
 
@@ -158,12 +163,12 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         } else {
             date = Calendar.getInstance();
             // assume current date as last modified date (only for binaries and nodes with autocreated jcr:lastModified through mixin mix:lastModified)
-            if (!node.getPrimaryType().equals(JcrConstants.NT_RESOURCE) && !node.getMixinTypes().contains(JcrConstants.MIX_LAST_MODIFIED)) {
+            if (!node.getPrimaryType().orElse("").equals(JcrConstants.NT_RESOURCE) && !node.getMixinTypes().contains(JcrConstants.MIX_LAST_MODIFIED)) {
                 // otherwise either
                 if (strictLastModificationCheck) {
                     date.add(Calendar.YEAR, 1000); // some day in the future to make it always fail
                 } else {
-                    date.setTimeInMillis(0); // some day in the past to make it always pass
+                    date.add(Calendar.YEAR, -1000); // some day in the past to make it always pass
                 }
             }
         }

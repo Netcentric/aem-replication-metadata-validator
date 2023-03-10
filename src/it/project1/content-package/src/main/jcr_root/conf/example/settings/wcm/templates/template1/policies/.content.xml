@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+    jcr:primaryType="cq:Page">
+    <jcr:content
+        cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"
+        cq:lastReplicated_preview="{Date}2022-01-01T00:00:00.000+01:00"
+        cq:lastReplicated_publish="{Date}2022-01-01T00:00:00.000+01:00"
+        cq:lastReplicatedBy="Deployment"
+        cq:lastReplicatedBy_preview="Deployment"
+        cq:lastReplicatedBy_publish="Deployment"
+        cq:lastReplicationAction="Activate"
+        cq:lastReplicationAction_preview="Activate"
+        cq:lastReplicationAction_publish="Activate"
+        cq:policy="some/policy/path"
+        jcr:primaryType="nt:unstructured"
+        sling:resourceType="wcm/core/components/policies/mappings">
+        <root jcr:primaryType="nt:unstructured">
+            <container 
+                jcr:primaryType="nt:unstructured"
+                sling:resourceType="wcm/core/components/policies/mapping">
+            </container>
+        </root>
+    </jcr:content>
+</jcr:root>

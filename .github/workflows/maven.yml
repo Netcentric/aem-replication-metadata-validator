@@ -89,6 +89,8 @@ jobs:
 
       - name: Publish Test Report
         if: ${{ always() }} # make sure to run even if previous Maven execution failed (due to failed test)
-        uses: scacap/action-surefire-report@v1
+        uses: EnricoMi/publish-unit-test-result-action/composite@v2
         with:
+          files: |
+            invokler-reports/**/*.xml
           check_name: Test report (${{ matrix.os }}, JDK ${{ matrix.jdk }})
