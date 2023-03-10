@@ -1,4 +1,4 @@
-[![Build Status](https://img.shields.io/github/actions/workflow/status/Netcentric/aem-replication-metadata-validator/maven.yml)](https://github.com/Netcentric/aem-replication-metadata-validator/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Netcentric/aem-replication-metadata-validator/maven.yml?branch=main)](https://github.com/Netcentric/aem-replication-metadata-validator/actions)
 [![License](https://img.shields.io/badge/License-EPL%201.0-red.svg)](https://opensource.org/licenses/EPL-1.0)
 [![Maven Central](https://img.shields.io/maven-central/v/biz.netcentric.filevault.validator/aem-replication-metadata-validator)](https://search.maven.org/artifact/biz.netcentric.filevault.validator/aem-replication-metadata-validator)
 [![SonarCloud Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Netcentric_aem-replication-metadata-validator&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Netcentric_aem-replication-metadata-validator)
