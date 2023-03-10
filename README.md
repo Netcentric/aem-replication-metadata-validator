@@ -8,14 +8,15 @@
 
 Validates that FileVault content packages contain replication metadata (i.e. `cq:lastReplicated` or `cq:lastPublished` property) in certain nodes. Its value must be newer than the last modification of the node. 
 This is important for all content packages which are installed on both Author and Publish to make the Author instance aware of the fact that the according page/resource is already active in the latest version. AEM Author checks for outdated and non-published references via implementations of [`com.adobe.granite.references.ReferenceProvider`][4].
+Every reference which is not detected as published in the most recent version (i.e. has incorrect metadata) will be [selected for activation along with the referencing page][aem-publish] which is *unnecessary* for nodes already existing on the publish *and often fails* due to missing permissions of the user. In the worst case such references block the replication queue (for immutable references below `/apps` in AEM as a Cloud Service).
 
 This artifact provides a validator implementation for the [FileVault Validation Module][2] and can be used for example with the [filevault-package-maven-plugin][3].
 
 Use cases are
 
 1. [Editable templates][page-templates]' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`)
-1. [Editable Templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`)
-1. Generic Context-Aware configurations (as found by [`com.adobe.cq.wcm.core.components.internal.services.CaConfigReferenceProvider`](https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java))
+1. [Editable templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`)
+1. Generic [Sling Context-Aware configurations][ca-configs] (as found by [`com.adobe.cq.wcm.core.components.internal.services.CaConfigReferenceProvider`](https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java))
 
 Those are validated through the default value for `includedNodePathPatternsAndTypes`. This default set can be overridden through the settings outlined below.
 
@@ -61,3 +62,5 @@ You can use this validator with the [FileVault Package Maven Plugin][3] in versi
 [3]: https://jackrabbit.apache.org/filevault-package-maven-plugin/index.html
 [4]: https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/com/adobe/granite/references/ReferenceProvider.html
 [page-templates]: https://experienceleague.adobe.com/docs/experience-manager-65/developing/platform/templates/page-templates-editable.html
+[ca-configs]: https://sling.apache.org/documentation/bundles/context-aware-configuration/context-aware-configuration.html
+[aem-publish]: https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/sites/authoring/fundamentals/publishing-pages.html
