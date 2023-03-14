@@ -13,6 +13,7 @@
 package biz.netcentric.filevault.validator;
 
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -45,7 +46,7 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
         map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/policies"), NameConstants.NT_PAGE);
         // and regular context-aware configuration (as found by https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java)
         map.put(Pattern.compile("/(apps|conf)/.*/(sling:configs|settings/cloudconfigs)/.*"), NameConstants.NT_PAGE);
-        return map;
+        return Collections.unmodifiableMap(map);
     }
 
     @Nullable
