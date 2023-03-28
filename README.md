@@ -16,14 +16,14 @@ Every reference which is not detected as published in the most recent version (i
 
 This artifact provides a validator implementation for the [FileVault Validation Module][2] and can be used for example with the [filevault-package-maven-plugin][3].
 
-Use cases are
+The following repository locations are considered by default:
 
 1. [Editable templates][page-templates]' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`)
 1. [Editable templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`)
 1. Generic [Sling Context-Aware configurations][ca-configs] (as found by [`com.adobe.cq.wcm.core.components.internal.services.CaConfigReferenceProvider`](https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java))
 
 Those are validated through the default value for `includedNodePathPatternsAndTypes`. This default set can be overridden through the settings outlined below to check for other nodes.
-Feel free to raise an issue.
+Feel free to raise an issue to get the default set adjusted.
 
 # Settings
 
@@ -64,7 +64,7 @@ You can use this validator with the [FileVault Package Maven Plugin][3] in versi
 # Alternative Approaches
 
 The [Package Replication Status Updater feature from ACS AEM Commons][package-replication-status-updater] can be used as well to maintain a correct replication status.
-However this approach only works if the according packages are replicated from the Author and not directly installed through some other way. So in general this is not a viable alternative for AEM as a Cloud Service.
+However this approach only works if the according packages are replicated from the Author and not directly installed through some other means. So in general this is not a viable alternative for AEM as a Cloud Service.
 
 
 [aemanalyser-maven-plugin]: https://github.com/adobe/aemanalyser-maven-plugin/tree/main/aemanalyser-maven-plugin

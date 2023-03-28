@@ -164,11 +164,11 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
             date = Calendar.getInstance();
             // assume current date as last modified date (only for binaries and nodes with autocreated jcr:lastModified through mixin mix:lastModified)
             if (!node.getPrimaryType().orElse("").equals(JcrConstants.NT_RESOURCE) && !node.getMixinTypes().contains(JcrConstants.MIX_LAST_MODIFIED)) {
-                // otherwise either
+                // otherwise either ...
                 if (strictLastModificationCheck) {
-                    date.add(Calendar.YEAR, 1000); // some day in the future to make it always fail
+                    date.add(Calendar.YEAR, 1000); // ... some day in the future to make it always fail
                 } else {
-                    date.add(Calendar.YEAR, -1000); // some day in the past to make it always pass
+                    date.add(Calendar.YEAR, -1000); // ... some day in the past to make it always pass
                 }
             }
         }
