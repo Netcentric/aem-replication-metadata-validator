@@ -13,9 +13,12 @@
 package biz.netcentric.filevault.validator;
 
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -35,7 +38,9 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     // comma-separated list of items in the format "<regex>[<primary-type>]"
     private static final String OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = "includedNodePathPatternsAndTypes";
     private static final String OPTION_STRICT_LAST_MODIFICATION_CHECK = "strictLastModificationDateCheck";
-
+    private static final String OPTION_AGENT_NAMES = "agentNames";
+    
+    private static final Set<String> DEFAULT_AGENT_NAMES = Collections.singleton(AemReplicationMetadataValidator.DEFAULT_AGENT_NAME);
     private static final Map<Pattern, String> DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultMap();
 
     private static Map<Pattern, String> createDefaultMap() {
@@ -52,13 +57,19 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     @Nullable
     public Validator createValidator(@NotNull ValidationContext context, @NotNull ValidatorSettings settings) {
         final Map<Pattern, String> includedNodePathsPatternsAndTypes;
+        final Set<String> agentNames;
         if (settings.getOptions().containsKey(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES)) {
             includedNodePathsPatternsAndTypes = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
         } else {
             includedNodePathsPatternsAndTypes = DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES;
         }
         boolean strictLastModificationDateCheck = Boolean.parseBoolean(settings.getOptions().get(OPTION_STRICT_LAST_MODIFICATION_CHECK));
-        return new AemReplicationMetadataValidator(settings.getDefaultSeverity(), includedNodePathsPatternsAndTypes, strictLastModificationDateCheck);
+        if (settings.getOptions().containsKey(OPTION_AGENT_NAMES)) {
+            agentNames = new HashSet<>(Arrays.asList(settings.getOptions().get(OPTION_AGENT_NAMES).split("\\s*,\\s*")));
+        } else {
+            agentNames = DEFAULT_AGENT_NAMES;
+        }
+        return new AemReplicationMetadataValidator(settings.getDefaultSeverity(), includedNodePathsPatternsAndTypes, strictLastModificationDateCheck, agentNames);
     }
 
     static Map<Pattern, String> parseNodePathPatternsAndTypes(String option) {

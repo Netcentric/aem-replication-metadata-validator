@@ -16,10 +16,12 @@ import java.util.ArrayDeque;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.jcr.Property;
@@ -29,6 +31,7 @@ import javax.jcr.Value;
 import javax.jcr.ValueFactory;
 
 import org.apache.jackrabbit.spi.Name;
+import org.apache.jackrabbit.spi.NameFactory;
 import org.apache.jackrabbit.spi.commons.name.NameFactoryImpl;
 import org.apache.jackrabbit.value.ValueFactoryImpl;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
@@ -48,24 +51,29 @@ import com.day.cq.wcm.api.NameConstants;
 public class AemReplicationMetadataValidator implements DocumentViewXmlValidator {
 
     static final String CQ_NAMESPACE_URI = "http://www.day.com/jcr/cq/1.0"; // no constant defined in https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/constant-values.html
-    private static final Name NAME_CQ_LAST_REPLICATED = NameFactoryImpl.getInstance().create(CQ_NAMESPACE_URI, "lastReplicated");
-    private static final Name NAME_CQ_LAST_PUBLISHED = NameFactoryImpl.getInstance().create(CQ_NAMESPACE_URI, "lastPublished");
-    private static final Name NAME_CQ_LAST_MODIFIED =  NameFactoryImpl.getInstance().create(CQ_NAMESPACE_URI, "lastModified");
-    private static final Name NAME_JCR_LAST_MODIFIED = NameFactoryImpl.getInstance().create(Property.JCR_LAST_MODIFIED);
+    private static final NameFactory NAME_FACTORY = NameFactoryImpl.getInstance();
+    private static final String CQ_LAST_REPLICATED = "lastReplicated";
+    private static final String CQ_LAST_PUBLISHED = "lastPublished";
+    private static final Name NAME_CQ_LAST_MODIFIED =  NAME_FACTORY.create(CQ_NAMESPACE_URI, "lastModified");
+    private static final Name NAME_JCR_LAST_MODIFIED = NAME_FACTORY.create(Property.JCR_LAST_MODIFIED);
+    static final String DEFAULT_AGENT_NAME = "publish";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AemReplicationMetadataValidator.class);
-
+    
     private final ValueFactory valueFactory;
     private final @NotNull ValidationMessageSeverity validationMessageSeverity;
     private final Map<Pattern, String> includedNodePathsPatternsAndTypes;
     private final boolean strictLastModificationCheck;
+    private final Set<String> agentNames;
     private Queue<String> relevantPagePaths = Collections.asLifoQueue(new ArrayDeque<>());
+    
 
-    public AemReplicationMetadataValidator(@NotNull ValidationMessageSeverity validationMessageSeverity, Map<Pattern, String> includedNodePathsPatternsAndTypes, boolean strictLastModificationDateCheck) {
+    public AemReplicationMetadataValidator(@NotNull ValidationMessageSeverity validationMessageSeverity, Map<Pattern, String> includedNodePathsPatternsAndTypes, boolean strictLastModificationDateCheck, Set<String> agentNames) {
         this.valueFactory = ValueFactoryImpl.getInstance();
         this.validationMessageSeverity = validationMessageSeverity;
         this.includedNodePathsPatternsAndTypes = includedNodePathsPatternsAndTypes;
         this.strictLastModificationCheck = strictLastModificationDateCheck;
+        this.agentNames = agentNames;
     }
 
     @Nullable
@@ -121,9 +129,12 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         return DocumentViewXmlValidator.super.validateEnd(node, nodeContext, isRoot);
     }
 
-    private Calendar getLastReplicationDate(@NotNull DocViewNode2 node) throws IllegalStateException, RepositoryException {
-        DocViewProperty2 property = Optional.ofNullable(node.getProperty(NAME_CQ_LAST_REPLICATED)
-                .orElseGet(() -> node.getProperty(NAME_CQ_LAST_PUBLISHED)
+    private Calendar getLastReplicationDate(@NotNull DocViewNode2 node, String agentName) throws IllegalStateException, RepositoryException {
+        // this logic is derived from com.day.cq.replication.impl.ReplicationStatusImpl.readAgentStatus(...)
+        // and com.day.cq.wcm.core.impl.reference.ReferenceReplicationStatusProvider.initReplicationStatusMap(...)
+        String metadataPropertySuffix = agentName.equals(DEFAULT_AGENT_NAME) ? "" : ("_" + agentName);
+        DocViewProperty2 property = Optional.ofNullable(node.getProperty(NAME_FACTORY.create(CQ_NAMESPACE_URI, CQ_LAST_REPLICATED + metadataPropertySuffix))
+                .orElseGet(() -> node.getProperty(NAME_FACTORY.create(CQ_NAMESPACE_URI, CQ_LAST_PUBLISHED + metadataPropertySuffix))
                 .orElse(null)))
             .orElseThrow(() -> new IllegalStateException("No replication property found"));
         Value lastReplicatedValue = valueFactory.createValue(
@@ -132,24 +143,30 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
     }
 
     private Collection<ValidationMessage> validate(@NotNull DocViewNode2 node) {
-        Calendar lastReplicationDate;
-        try {
-            lastReplicationDate = getLastReplicationDate(node);
-        } catch (IllegalStateException|RepositoryException e) {
-            return Collections.singleton(new ValidationMessage(validationMessageSeverity, "No replication date found", e));
-        }
+        
         Calendar lastModificationDate;
         try {
             lastModificationDate = getLastModificationDate(node);
         } catch (IllegalStateException|RepositoryException e) {
-            return Collections.singleton(new ValidationMessage(validationMessageSeverity, "No last modification date found", e));
+            return Collections.singletonList(new ValidationMessage(validationMessageSeverity, "No last modification date found", e));
         }
-        
-        // Logic from com.day.cq.wcm.core.impl.reference.converter.AssetJSONItemConverter.referenceToJSONObject()
-        if (lastReplicationDate.compareTo(lastModificationDate) < 0) {
-            return Collections.singleton(new ValidationMessage(validationMessageSeverity, "The replication date " + lastReplicationDate.toInstant().toString() + " is older than the last modification date " + lastModificationDate.toInstant().toString()));
+        Collection<ValidationMessage> validationMessages = new LinkedList<>();
+        for (String agentName : agentNames) {
+            Calendar lastReplicationDate;
+            try {
+                lastReplicationDate = getLastReplicationDate(node, agentName);
+            } catch (IllegalStateException|RepositoryException e) {
+                validationMessages.add(new ValidationMessage(validationMessageSeverity, "No replication date found for agent " + agentName, e));
+                continue;
+            }
+            
+            // Logic from com.day.cq.wcm.core.impl.reference.converter.AssetJSONItemConverter.referenceToJSONObject()
+            if (lastReplicationDate.compareTo(lastModificationDate) < 0) {
+                validationMessages.add(new ValidationMessage(validationMessageSeverity, "The replication date " + lastReplicationDate.toInstant().toString() 
+                        + " is older than the last modification date " + lastModificationDate.toInstant().toString() + " for agent " + agentName));
+            }
         }
-        return null;
+        return validationMessages;
     }
 
     private Calendar getLastModificationDate(@NotNull DocViewNode2 node) throws IllegalStateException, RepositoryException {
