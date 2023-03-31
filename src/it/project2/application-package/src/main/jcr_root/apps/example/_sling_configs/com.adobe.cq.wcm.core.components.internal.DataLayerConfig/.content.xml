@@ -7,5 +7,9 @@
         cq:lastReplicated_preview2="{Date}2022-01-01T00:00:00.000+01:00"
         cq:lastReplicated_publish="{Date}2022-01-01T00:00:00.000+01:00"
         cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"
+        cq:lastReplicationAction="Activate"
+        cq:lastReplicationAction_preview="Activate"
+        cq:lastReplicationAction_preview2="Activate"
+        cq:lastReplicationAction_publish="Activate"
         enabled="{Boolean}true"/>
 </jcr:root>
