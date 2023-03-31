@@ -7,7 +7,7 @@
 
 # Overview
 
-Validates that FileVault content packages contain replication metadata (i.e. `cq:lastReplicated` or `cq:lastPublished` property) in certain nodes. Its value must be newer than the last modification of the node. 
+Validates that FileVault content packages contain replication metadata (i.e. `cq:lastReplicated` or `cq:lastPublished` and `cq:lastReplicationAction` property) in certain nodes. The value of the date property must be newer than the last modification date property of the node and the last action must have value `Activate`.
 This is important for all content packages which are installed on both Author and Publish to make the Author instance aware of the fact that the according page/resource is already active in the latest version. AEM Author checks for outdated and non-published references via implementations of [`com.adobe.granite.references.ReferenceProvider`][4].
 Every reference which is not detected as published in the most recent version (i.e. has incorrect metadata) will be [selected for activation along with the referencing page][aem-publish] which is *unnecessary* for nodes already existing on the publish *and often fails* due to missing permissions of the user. In the worst case such references block the replication queue (for immutable references below `/apps` in AEM as a Cloud Service).
 
@@ -38,7 +38,25 @@ Option | Mandatory | Description | Default Value | Since Version
 
 # Fix Violations
 
-When the validator detects issues those can be fixed by manually adding a `cq:lastReplicated` property to the according node in the underlying [DocView XML file][docview-xml] (potentially with an agent-specific suffix like `_preview`). This property must contain a date value which is newer than the date given in either the `cq:lastModified` or `jcr:lastModified` property. If no modification date is set any `cq:lastReplicated` value will suffice. For example, adding `cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"` and `cq:lastReplicated_preview="{Date}2022-01-01T00:00:00.000+01:00"` is enough to add to the node which is supposed to be detected as active in the last version on both default publish and preview tiers on AEM as a Cloud Service (in case no last modification date is set). For regular AEM 6.5 environments just adding `cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"` is enough.
+When the validator detects issues those can be fixed by manually adding a `cq:lastReplicated` and `cq:lastReplicationAction` property to the according node in the underlying [DocView XML file][docview-xml] (potentially with an agent-specific suffix like `_preview`). The `cq:lastReplicated` property must contain a date value which is newer than the date given in either the `cq:lastModified` or `jcr:lastModified` property. If no modification date is set any `cq:lastReplicated` value will suffice. The `cq:lastReplicationAction` property must have value `Activate`.
+
+For example, adding 
+
+```
+cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"
+cq:lastReplicated_preview="{Date}2022-01-01T00:00:00.000+01:00
+cq:lastReplicationAction="Activate"
+cq:lastReplicationAction_preview="Activate"
+```
+
+can be added to the node which is supposed to be detected as active in the last version on both default publish and preview tiers on AEM as a Cloud Service (in case no last modification date is set). For regular AEM 6.5 environments just adding 
+
+```
+cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"
+cq:lastReplicationAction="Activate"
+```
+
+is enough.
 
 # Usage with Maven
 
@@ -52,7 +70,7 @@ You can use this validator with the [FileVault Package Maven Plugin][3] in versi
     <validatorsSettings>
       <netcentric-aem-replication-metadata>
         <options>
-          <strictLastModificationDateCheck>true</strictLastModificationDateCheck><!-- default value is false  -->
+          <agentNames>publish,preview</agentNames><!-- default value is publish only  -->
         </options>
       </netcentric-aem-replication-metadata>
     </validatorsSettings>
