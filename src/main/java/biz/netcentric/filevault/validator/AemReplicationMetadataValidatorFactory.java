@@ -16,7 +16,6 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -39,9 +38,8 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     private static final String OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = "includedNodePathPatternsAndTypes";
     private static final String OPTION_STRICT_LAST_MODIFICATION_CHECK = "strictLastModificationDateCheck";
     private static final String OPTION_AGENT_NAMES = "agentNames";
-    
-    private static final Set<String> DEFAULT_AGENT_NAMES = Collections.singleton(AemReplicationMetadataValidator.DEFAULT_AGENT_NAME);
-    private static final Map<Pattern, String> DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultMap();
+    private static final @NotNull Set<@NotNull String> DEFAULT_AGENT_NAMES = Collections.singleton(AemReplicationMetadataValidator.DEFAULT_AGENT_NAME);
+    private static final @NotNull Map<Pattern, String> DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultMap();
 
     private static Map<Pattern, String> createDefaultMap() {
         Map<Pattern, String> map = new HashMap<>();
@@ -56,8 +54,8 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
 
     @Nullable
     public Validator createValidator(@NotNull ValidationContext context, @NotNull ValidatorSettings settings) {
-        final Map<Pattern, String> includedNodePathsPatternsAndTypes;
-        final Set<String> agentNames;
+        final @NotNull Map<Pattern, String> includedNodePathsPatternsAndTypes;
+        final @NotNull Set<@NotNull String> agentNames;
         if (settings.getOptions().containsKey(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES)) {
             includedNodePathsPatternsAndTypes = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
         } else {
@@ -65,14 +63,14 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
         }
         boolean strictLastModificationDateCheck = Boolean.parseBoolean(settings.getOptions().get(OPTION_STRICT_LAST_MODIFICATION_CHECK));
         if (settings.getOptions().containsKey(OPTION_AGENT_NAMES)) {
-            agentNames = new HashSet<>(Arrays.asList(settings.getOptions().get(OPTION_AGENT_NAMES).split("\\s*,\\s*")));
+            agentNames = Arrays.stream(settings.getOptions().get(OPTION_AGENT_NAMES).split(",")).map(String::trim).collect(Collectors.toSet());
         } else {
             agentNames = DEFAULT_AGENT_NAMES;
         }
         return new AemReplicationMetadataValidator(settings.getDefaultSeverity(), includedNodePathsPatternsAndTypes, strictLastModificationDateCheck, agentNames);
     }
 
-    static Map<Pattern, String> parseNodePathPatternsAndTypes(String option) {
+    static @NotNull Map<Pattern, String> parseNodePathPatternsAndTypes(String option) {
         return Pattern.compile(",").splitAsStream(option)
                 .map((entry) -> {
                     int startType = entry.lastIndexOf('[');
