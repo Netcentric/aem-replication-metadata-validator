@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:rep="internal"
+    jcr:mixinTypes="[rep:AccessControllable]"
+    jcr:primaryType="cq:Page">
+    <wknd jcr:primaryType="nt:unstructured">
+        <components jcr:primaryType="nt:unstructured">
+            <container jcr:primaryType="nt:unstructured">
+                <content-default
+                    jcr:description="Policy for editable layout containers"
+                    jcr:lastModified="{Date}2020-07-09T08:11:09.069-07:00"
+                    jcr:lastModifiedBy="admin"
+                    jcr:primaryType="nt:unstructured"
+                    jcr:title="WKND Site Default"
+                    sling:resourceType="wcm/core/components/policy/policy"
+                    components="[/libs/wknd/components/container,group:WKND.Content,/apps/wknd/components/form/container,group:WKND.Structure]"
+                    policyResourceType="wknd/components/container">
+                    <cq:authoring jcr:primaryType="nt:unstructured">
+                        <assetToComponentMapping jcr:primaryType="nt:unstructured">
+                            <image
+                                jcr:primaryType="nt:unstructured"
+                                assetGroup="media"
+                                assetMimetype="image/*"
+                                droptarget="image"
+                                resourceType="wknd/components/image"
+                                type="Images"/>
+                        </assetToComponentMapping>
+                    </cq:authoring>
+                    <jcr:content
+                        cq:lastReplicated="{Date}2019-10-22T13:34:50.533-07:00"
+                        cq:lastReplicatedBy="admin"
+                        cq:lastReplicationAction="Activate"
+                        jcr:mixinTypes="[cq:ReplicationStatus]"
+                        jcr:primaryType="nt:unstructured"
+                        mergeList="{Boolean}true"/>
+                </content-default>
+            </container>
+        </components>
+    </wknd>
+</jcr:root>

@@ -34,19 +34,22 @@ import com.day.cq.wcm.api.NameConstants;
 @MetaInfServices
 public class AemReplicationMetadataValidatorFactory implements ValidatorFactory {
 
+    private static final String RESOURCE_TYPE_CONTENT_POLICY = "wcm/core/components/policy/policy";
     // comma-separated list of items in the format "<regex>[<primary-type>]"
     private static final String OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = "includedNodePathPatternsAndTypes";
     private static final String OPTION_STRICT_LAST_MODIFICATION_CHECK = "strictLastModificationDateCheck";
     private static final String OPTION_AGENT_NAMES = "agentNames";
-    private static final @NotNull Set<@NotNull String> DEFAULT_AGENT_NAMES = Collections.singleton(AemReplicationMetadataValidator.DEFAULT_AGENT_NAME);
+    private static final @NotNull Set<@NotNull String> DEFAULT_AGENT_NAMES = Collections.singleton(ReplicationMetadata.DEFAULT_AGENT_NAME);
     private static final @NotNull Map<Pattern, String> DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultMap();
 
     private static Map<Pattern, String> createDefaultMap() {
         Map<Pattern, String> map = new HashMap<>();
         // by default: editable templates (as found by com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider)
         map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/structure"), NameConstants.NT_PAGE);
-        // content policies (as found by com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider)
+        // content policies mappings (as found by com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider)
         map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/policies"), NameConstants.NT_PAGE);
+        // mapped content policies (as found by com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider)
+        map.put(Pattern.compile(".*/settings/wcm/policies/.*"), RESOURCE_TYPE_CONTENT_POLICY);
         // and regular context-aware configuration (as found by https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java)
         map.put(Pattern.compile("/(apps|conf)/.*/(sling:configs|settings/cloudconfigs)/.*"), NameConstants.NT_PAGE);
         return Collections.unmodifiableMap(map);
