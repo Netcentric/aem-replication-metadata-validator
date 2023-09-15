@@ -247,6 +247,8 @@
                             <writeJunitReport>true</writeJunitReport>
                             <!-- reuse global repo for speeding up builds
                                 <localRepositoryPath>target/it-repo</localRepositoryPath> -->
+                            <!-- enable to remote debug ITs
+                            <mavenExecutable>${maven.home}/bin/mvnDebug</mavenExecutable> -->
                         </configuration>
                     </execution>
                 </executions>
