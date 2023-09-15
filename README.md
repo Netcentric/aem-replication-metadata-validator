@@ -63,6 +63,8 @@ The node where the replication and modification metadata is located differs  dep
 * For the former (inside a `cq:Page`) both the replication and modification metadata is located directly inside the top-level `jcr:content` node of the container page (this affects e.g. editable templates' structure or policy mapping nodes) 
 * For the latter (outside a `cq:Page`) the replication metadata is located in a `jcr:content` node below the affected node and the modification metadata directly a propery on the affected node (this affects policy nodes with resource type `wcm/core/components/policy/policy`)
 
+The `jcr:content` node carrying the replication metadata should have mix-in `cq:ReplicationStatus` (usually by adding the property `jcr:mixinTypes="[cq:ReplicationStatus]"`) but this is not a must.
+
 # Usage with Maven
 
 You can use this validator with the [FileVault Package Maven Plugin][3] in version 1.3.0 or higher like this
