@@ -38,7 +38,7 @@ Option | Mandatory | Description | Default Value | Since Version
 
 # Fix Violations
 
-When the validator detects issues those can be fixed by manually adding a `cq:lastReplicated` and `cq:lastReplicationAction` property to the according node in the underlying [DocView XML file][docview-xml] (potentially with an agent-specific suffix like `_preview`). The `cq:lastReplicated` property must contain a date value which is newer than the date given in either the `cq:lastModified` or `jcr:lastModified` property. If no modification date is set any `cq:lastReplicated` value will suffice. The `cq:lastReplicationAction` property must have value `Activate`.
+When the validator detects issues those can be fixed by manually adding a `cq:lastReplicated` and `cq:lastReplicationAction` property to the according node in the underlying [DocView XML file][docview-xml] (potentially with an agent-specific suffix like `_preview`). The `cq:lastReplicated` property must contain a date value which is newer than the date given in either the `cq:lastModified` or `jcr:lastModified` property. If no modification date is set any `cq:lastReplicated` value will suffice. The `cq:lastReplicationAction` property must be set to value `Activate`.
 
 For example, adding 
 
@@ -57,6 +57,11 @@ cq:lastReplicationAction="Activate"
 ```
 
 is enough.
+
+The node where the replication and modification metadata is located differs  depending on whether the affected content is inside a `cq:Page` (i.e. somewhere below its `jcr:content` node) or outside (this may be still below a `cq:Page` node but not within its `jcr:content` child). 
+
+* For the former (inside a `cq:Page`) both the replication and modification metadata is located directly inside the top-level `jcr:content` node of the container page (this affects e.g. editable templates' structure or policy mapping nodes) 
+* For the latter (outside a `cq:Page`) the replication metadata is located in a `jcr:content` node below the affected node and the modification metadata directly a propery on the affected node (this affects policy nodes with resource type `wcm/core/components/policy/policy`)
 
 # Usage with Maven
 
