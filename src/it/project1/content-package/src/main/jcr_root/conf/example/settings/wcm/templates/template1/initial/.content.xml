@@ -4,6 +4,10 @@
     <jcr:content
         cq:template="/conf/example/settings/wcm/templates/template1"
         jcr:primaryType="cq:PageContent"
+        cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"
+        cq:lastReplicated_preview="{Date}2022-01-01T00:00:00.000+01:00"
+        cq:lastReplicated_publish="{Date}2022-01-01T00:00:00.000+01:00"
+        cq:lastReplicationAction="Activate"
         sling:resourceType="someresourcetype">
     </jcr:content>
 </jcr:root>

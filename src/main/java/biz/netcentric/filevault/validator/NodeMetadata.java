@@ -44,6 +44,11 @@ public class NodeMetadata {
     static final Name NAME_CQ_LAST_MODIFIED = AemReplicationMetadataValidator.NAME_FACTORY.create(AemReplicationMetadataValidator.CQ_NAMESPACE_URI, "lastModified");
     private static final Name NAME_JCR_LAST_MODIFIED = AemReplicationMetadataValidator.NAME_FACTORY.create(Property.JCR_LAST_MODIFIED);
 
+    /**
+     * If {@code true} the node is supposed to contain replication metadata which indicates it is active and not modified,
+     *  otherwise it should not contain any replication metadata at all
+     */
+    final boolean isExcluded;
     /** this path always refers to the node supposed to contain the last modified property */
     private final String path;
     private final Map<String,ReplicationMetadata> replicationStatusPerAgent;
@@ -51,8 +56,9 @@ public class NodeMetadata {
     /** helper variable to keep track of the nesting level below the node given by path, 0 means current node is the one supposed to contain the last modified property */
     private int currentNodeNestingLevel;
 
-    public NodeMetadata(String path, boolean currentNodeIsParent) {
+    public NodeMetadata(boolean isExcluded, String path, boolean currentNodeIsParent) {
         super();
+        this.isExcluded = isExcluded;
         this.path = path;
         this.replicationStatusPerAgent = new HashMap<>();
         lastModificationDate = Optional.empty();
@@ -102,6 +108,11 @@ public class NodeMetadata {
         lastModificationDate = Optional.of(date);
     }
 
+    /**
+     * This never fails until actually dereferencing data
+     * @param node
+     * @param agentNames
+     */
     public void captureReplicationMetadata(@NotNull DocViewNode2 node, @NotNull Collection<@NotNull String> agentNames) {
         for (String agentName : agentNames) {
             replicationStatusPerAgent.put(agentName, new ReplicationMetadata(node, agentName));
@@ -110,33 +121,54 @@ public class NodeMetadata {
 
     public Collection<ValidationMessage> validate(@NotNull ValidationMessageSeverity validationMessageSeverity, @NotNull Collection<@NotNull String> agentNames) {
         Collection<ValidationMessage> validationMessages = new LinkedList<>();
-        // override nodePath as this is being called from DocumentViewXmlVallidator.validateEnd() which suffers from https://issues.apache.org/jira/browse/JCRVLT-718?
+        // override nodePath as this is being called from DocumentViewXmlValidator.validateEnd() which suffers from https://issues.apache.org/jira/browse/JCRVLT-718?
         for (String agentName : agentNames) {
-            ReplicationMetadata replicationStatus = replicationStatusPerAgent.get(agentName);
-            try {
-                ReplicationActionType lastReplicationAction = replicationStatus.getLastReplicationAction();
-                if (lastReplicationAction != ReplicationActionType.ACTIVATE) {
-                    validationMessages.add(new ValidationMessage(validationMessageSeverity, "The last replication action must be 'Activate' but was '" + lastReplicationAction + "' for agent " + agentName, path, null, null, 0, 0, null));
-                }
-            } catch (IllegalStateException e) {
-                validationMessages.add(new ValidationMessage(validationMessageSeverity, "No replication action set for agent " + agentName +": " + e.getMessage(), path, null, null, 0, 0, null));
-            }
-            try {
-                Calendar lastReplicationDate = replicationStatus.getLastPublished();
-                if (!lastModificationDate.isPresent()) {
-                    validationMessages.add(new ValidationMessage(validationMessageSeverity, "No last modification date captured for this path", path, null, null, 0, 0, null));
-                } else {
-                    // Logic from com.day.cq.wcm.core.impl.reference.converter.AssetJSONItemConverter.referenceToJSONObject()
-                    if (lastReplicationDate.compareTo(lastModificationDate.get()) < 0) {
-                        validationMessages.add(new ValidationMessage(validationMessageSeverity, "The replication date " + lastReplicationDate.toInstant().toString() + " for agent " + agentName
-                                + " is older than the last modification date " + lastModificationDate.get().toInstant().toString(), path, null, null, 0, 0, null));
-                    }
-                }
-            } catch (IllegalStateException e) {
-                validationMessages.add(new ValidationMessage(validationMessageSeverity, "No replication date set for agent " + agentName +": " + e.getMessage(), path, null, null, 0, 0, null));
+            if (isExcluded) {
+                validateNoReplicationMetadata(validationMessageSeverity, validationMessages, agentName);
+            } else {
+                validateIsPublished(validationMessageSeverity, validationMessages, agentName);
             }
         }
         return validationMessages;
+    }
+
+    private void validateNoReplicationMetadata(@NotNull ValidationMessageSeverity validationMessageSeverity,
+            Collection<ValidationMessage> validationMessages, String agentName) {
+        ReplicationMetadata replicationStatus = replicationStatusPerAgent.get(agentName);
+        ReplicationActionType lastReplicationAction = replicationStatus.getLastReplicationAction(true);
+        if (lastReplicationAction != null) {
+            validationMessages.add(new ValidationMessage(validationMessageSeverity, "Last replication action not allowed for this path but is " + lastReplicationAction, path, null, null, 0, 0, null));
+        }
+        Calendar lastReplicationDate = replicationStatus.getLastReplicationDate(true);
+        if (lastReplicationDate != null) {
+            validationMessages.add(new ValidationMessage(validationMessageSeverity, "Last replication date not allowed for this path but is " + lastReplicationDate.toInstant().toString(), path, null, null, 0, 0, null));
+        }
+    }
+
+    private void validateIsPublished(ValidationMessageSeverity validationMessageSeverity, Collection<ValidationMessage> validationMessages, String agentName) {
+        ReplicationMetadata replicationStatus = replicationStatusPerAgent.get(agentName);
+        try {
+            ReplicationActionType lastReplicationAction = replicationStatus.getLastReplicationAction(false);
+            if (lastReplicationAction != ReplicationActionType.ACTIVATE) {
+                validationMessages.add(new ValidationMessage(validationMessageSeverity, "The last replication action must be 'Activate' but was '" + lastReplicationAction + "' for agent " + agentName, path, null, null, 0, 0, null));
+            }
+        } catch (IllegalStateException e) {
+            validationMessages.add(new ValidationMessage(validationMessageSeverity, "No replication action set for agent " + agentName +": " + e.getMessage(), path, null, null, 0, 0, null));
+        }
+        try {
+            Calendar lastReplicationDate = replicationStatus.getLastReplicationDate(false);
+            if (!lastModificationDate.isPresent()) {
+                validationMessages.add(new ValidationMessage(validationMessageSeverity, "No last modification date captured for this path", path, null, null, 0, 0, null));
+            } else {
+                // Logic from com.day.cq.wcm.core.impl.reference.converter.AssetJSONItemConverter.referenceToJSONObject()
+                if (lastReplicationDate.compareTo(lastModificationDate.get()) < 0) {
+                    validationMessages.add(new ValidationMessage(validationMessageSeverity, "The replication date " + lastReplicationDate.toInstant().toString() + " for agent " + agentName
+                            + " is older than the last modification date " + lastModificationDate.get().toInstant().toString(), path, null, null, 0, 0, null));
+                }
+            }
+        } catch (IllegalStateException e) {
+            validationMessages.add(new ValidationMessage(validationMessageSeverity, "No replication date set for agent " + agentName +": " + e.getMessage(), path, null, null, 0, 0, null));
+        }
     }
     
 }

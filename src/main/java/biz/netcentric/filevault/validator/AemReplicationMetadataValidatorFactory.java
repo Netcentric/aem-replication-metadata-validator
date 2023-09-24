@@ -37,12 +37,14 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     private static final String RESOURCE_TYPE_CONTENT_POLICY = "wcm/core/components/policy/policy";
     // comma-separated list of items in the format "<regex>[<primary-type>]"
     private static final String OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = "includedNodePathPatternsAndTypes";
+    // comma-separated list of items in the format "<regex>[<primary-type>]"
+    private static final String OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES = "excludedNodePathPatternsAndTypes";
     private static final String OPTION_STRICT_LAST_MODIFICATION_CHECK = "strictLastModificationDateCheck";
     private static final String OPTION_AGENT_NAMES = "agentNames";
     private static final @NotNull Set<@NotNull String> DEFAULT_AGENT_NAMES = Collections.singleton(ReplicationMetadata.DEFAULT_AGENT_NAME);
-    private static final @NotNull Map<Pattern, String> DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultMap();
+    private static final @NotNull Map<Pattern, String> DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultIncludeMap();
 
-    private static Map<Pattern, String> createDefaultMap() {
+    private static Map<Pattern, String> createDefaultIncludeMap() {
         Map<Pattern, String> map = new HashMap<>();
         // by default: editable templates (as found by com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider)
         map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/structure"), NameConstants.NT_PAGE);
@@ -55,22 +57,36 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
         return Collections.unmodifiableMap(map);
     }
 
+    private static final @NotNull Map<Pattern, String> DEFAULT_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultExcludeMap();
+
+    private static Map<Pattern, String> createDefaultExcludeMap() {
+        Map<Pattern, String> map = new HashMap<>();
+        map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/initial"), NameConstants.NT_PAGE);
+        return Collections.unmodifiableMap(map);
+    }
+    
     @Nullable
     public Validator createValidator(@NotNull ValidationContext context, @NotNull ValidatorSettings settings) {
         final @NotNull Map<Pattern, String> includedNodePathsPatternsAndTypes;
-        final @NotNull Set<@NotNull String> agentNames;
         if (settings.getOptions().containsKey(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES)) {
             includedNodePathsPatternsAndTypes = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
         } else {
             includedNodePathsPatternsAndTypes = DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES;
         }
+        final @NotNull Map<Pattern, String> excludedNodePathsPatternsAndTypes;
+        if (settings.getOptions().containsKey(OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES)) {
+            excludedNodePathsPatternsAndTypes = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
+        } else {
+            excludedNodePathsPatternsAndTypes = DEFAULT_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES;
+        }
         boolean strictLastModificationDateCheck = Boolean.parseBoolean(settings.getOptions().get(OPTION_STRICT_LAST_MODIFICATION_CHECK));
+        final @NotNull Set<@NotNull String> agentNames;
         if (settings.getOptions().containsKey(OPTION_AGENT_NAMES)) {
             agentNames = Arrays.stream(settings.getOptions().get(OPTION_AGENT_NAMES).split(",")).map(String::trim).collect(Collectors.toSet());
         } else {
             agentNames = DEFAULT_AGENT_NAMES;
         }
-        return new AemReplicationMetadataValidator(settings.getDefaultSeverity(), includedNodePathsPatternsAndTypes, strictLastModificationDateCheck, agentNames);
+        return new AemReplicationMetadataValidator(settings.getDefaultSeverity(), includedNodePathsPatternsAndTypes, excludedNodePathsPatternsAndTypes, strictLastModificationDateCheck, agentNames);
     }
 
     static @NotNull Map<Pattern, String> parseNodePathPatternsAndTypes(String option) {

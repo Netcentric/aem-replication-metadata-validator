@@ -9,7 +9,7 @@
 
 Validates that FileVault content packages contain replication metadata (i.e. `cq:lastReplicated` or `cq:lastPublished` and `cq:lastReplicationAction` property) in certain nodes. The value of the date property must be newer than the last modification date property of the node and the last action must have value `Activate`.
 This is important for all content packages which are installed on both Author and Publish to make the Author instance aware of the fact that the according page/resource is already active in the latest version. AEM Author checks for outdated and non-published references via implementations of [`com.adobe.granite.references.ReferenceProvider`][4].
-Every reference which is not detected as published in the most recent version (i.e. has incorrect metadata) will be [selected for activation along with the referencing page][aem-publish] which is *unnecessary* for nodes already existing on the publish *and often fails* due to missing permissions of the user. In the worst case such references block the replication queue (for immutable references below `/apps` in AEM as a Cloud Service).
+Every reference which is not detected as published in the most recent version (i.e. has missing/incorrect metadata) will be [selected for activation along with the referencing page][aem-publish] which is *unnecessary* for nodes already existing on the publish *and often fails* due to missing permissions of the user. In the worst case such references block the replication queue (for immutable references below `/apps` in AEM as a Cloud Service).
 
 For AEM as a Cloud Service the author service maintains separate replication statuses for publish and preview tiers. Those are captured in a `cq:lastReplicated_preview`/`cq:lastReplicationAction_preview` property for the [preview tier][preview-tier], while for the publish tier they are captured in both `cq:lastReplicated`/`cq:lastReplicationAction` and `cq:lastReplicated_publish`/`cq:lastReplicationAction_publish` (the properties with and without agent suffix are carrying the same value, but only the former is evaluated for detecting the replication status on the publish tier).
 
@@ -17,13 +17,18 @@ For AEM as a Cloud Service the author service maintains separate replication sta
 
 This artifact provides a validator implementation for the [FileVault Validation Module][2] and can be used for example with the [filevault-package-maven-plugin][3].
 
-The following repository locations are considered by default:
+The following repository locations are considered by default which must contain replication metadata indicating that the node is *published and not modified*:
 
 1. [Editable templates][page-templates]' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`)
 1. [Editable templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`), this includes both *policy mappings* (with resource type=`wcm/core/components/policies/mappings`) as well as *actual policies* (with resource type=`wcm/core/components/policy/policy`). The latter are also found outside actual editable templates.
 1. Generic [Sling Context-Aware configurations][ca-configs] (as found by [`com.adobe.cq.wcm.core.components.internal.services.CaConfigReferenceProvider`](https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java))
 
-Those are validated through the default value for `includedNodePathPatternsAndTypes`. This default set can be overridden through the settings outlined below to check for other nodes.
+Those locations are given through the default value for `includedNodePathPatternsAndTypes`. This default set can be overridden through the settings outlined below to check for other nodes.
+
+In addition the following repository locations are considered which should not contain any *replication metadata*
+
+1. [Editable templates][page-templates]' initial nodes, as those are used as prototype when creating new pages based on the template. In case replication metadata would be included, those would end up on the newly created pages (and incorrectly expose them as being published).
+
 Feel free to raise an issue to get the default set adjusted.
 
 # Settings
@@ -32,7 +37,8 @@ The following options are supported apart from the default settings mentioned in
 
 Option | Mandatory | Description | Default Value | Since Version
 --- | --- | --- | --- | ---
-`includedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `<regex>[<primary-type or sling:resourceType>]`. The given regular expression must match a given node path (fully) for the node to be checked for metadata. In addition the node must have the given primary type (or `sling:resourceType` in case the primary type is `nt:unstructured`). | `.*/settings/wcm/templates/[^/]*/structure[cq:Page], .*/settings/wcm/templates/[^/]*/policies[cq:Page], .*/settings/wcm/policies/.*[wcm/core/components/policy/policy], /(apps\|conf)/.*/(sling:configs\|settings/cloudconfigs)/.*[cq:Page])` | 1.0.0 
+`includedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `<regex>[<primary-type or sling:resourceType>]`. The given regular expression must match a given node path (fully) for the node to be checked for valid metadata. In addition the node must have the given primary type (or `sling:resourceType` in case the primary type is `nt:unstructured`). | `.*/settings/wcm/templates/[^/]*/structure[cq:Page], .*/settings/wcm/templates/[^/]*/policies[cq:Page], .*/settings/wcm/policies/.*[wcm/core/components/policy/policy], /(apps\|conf)/.*/(sling:configs\|settings/cloudconfigs)/.*[cq:Page])` | 1.0.0 
+`excludedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `<regex>[<primary-type or sling:resourceType>]`. The given regular expression must match a given node path (fully) for the node to be checked for missing metadata. In addition the node must have the given primary type (or `sling:resourceType` in case the primary type is `nt:unstructured`). | `.*/settings/wcm/templates/[^/]*/initial[cq:Page]` | 1.3.0 
 `strictLastModificationDateCheck` | no | `true` means that nodes without a last modification property should always lead to validation errors. Otherwise they are handled in a lenient fashion like AEM behaves (i.e. assumption is that the modification date is -1 which is older than all replication dates). | `false` | 1.0.0
 `agentNames` | no | Comma-separated list of replication/distribution agent names whose replication metadata should be checked. Only relevant for AEMaaCS where it should be set to `publish,preview` in case the [Preview tier][preview-tier] is used next to the regular publish service. | `publish` | 1.1.0
 
