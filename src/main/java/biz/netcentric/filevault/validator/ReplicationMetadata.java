@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.jcr.RepositoryException;
-import javax.jcr.Value;
 
 import org.apache.jackrabbit.vault.util.DocViewNode2;
 import org.apache.jackrabbit.vault.util.DocViewProperty2;
@@ -48,7 +47,7 @@ public class ReplicationMetadata {
         this.agentName = agentName;
     }
 
-    static DocViewProperty2 getProperty(@NotNull DocViewNode2 node, @NotNull String agentName, @NotNull String namespaceUri, String... propertyNames) {
+    static DocViewProperty2 getProperty(@NotNull DocViewNode2 node, @NotNull String agentName, boolean allowNullReturnValue, @NotNull String namespaceUri, String... propertyNames) {
         String metadataPropertySuffix = agentName.equals(DEFAULT_AGENT_NAME) ? "" : ("_" + agentName);
         List<String> suffixedPropertyNames = Arrays.stream(propertyNames).map(s -> s + metadataPropertySuffix).collect(Collectors.toList());
         for (String propertyName : suffixedPropertyNames) {
@@ -57,41 +56,45 @@ public class ReplicationMetadata {
                 return property.get();
             }
         }
-        ChoiceFormat replicationProperties = new ChoiceFormat(
-                "1#Replication property|1.0<Replication properties");
-        throw new IllegalStateException(replicationProperties.format(suffixedPropertyNames.size()) + " " + String.join(" or ", suffixedPropertyNames.stream().map(s -> "{" + namespaceUri + "}" + s).collect(Collectors.toList())) + " not found");
+        if (!allowNullReturnValue) {
+            ChoiceFormat replicationProperties = new ChoiceFormat(
+                    "1#Replication property|1.0<Replication properties");
+            throw new IllegalStateException(replicationProperties.format(suffixedPropertyNames.size()) + " " + String.join(" or ", suffixedPropertyNames.stream().map(s -> "{" + namespaceUri + "}" + s).collect(Collectors.toList())) + " not found");
+        }
+        return null;
     }
 
-    static Calendar getLastReplicationDate(@NotNull DocViewNode2 node, @NotNull String agentName) throws IllegalStateException, RepositoryException {
+    public Calendar getLastReplicationDate(boolean allowNullReturnValue) {
         // this logic is derived from com.day.cq.replication.impl.ReplicationStatusImpl.readAgentStatus(...)
         // and com.day.cq.wcm.core.impl.reference.ReferenceReplicationStatusProvider.initReplicationStatusMap(...)
-        DocViewProperty2 property = getProperty(node, agentName, AemReplicationMetadataValidator.CQ_NAMESPACE_URI, CQ_LAST_REPLICATED, CQ_LAST_PUBLISHED);
-        Value lastReplicatedValue = AemReplicationMetadataValidator.VALUE_FACTORY.createValue(
-                property.getStringValue().orElseThrow(() -> new IllegalStateException("Empty replication property found in  " + property.getName())));
-        return lastReplicatedValue.getDate();
+        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, AemReplicationMetadataValidator.CQ_NAMESPACE_URI, CQ_LAST_REPLICATED, CQ_LAST_PUBLISHED);
+        Optional<Calendar> lastReplicationDate = Optional.ofNullable(property)
+                .flatMap(DocViewProperty2::getStringValue)
+                .map(AemReplicationMetadataValidator.VALUE_FACTORY::createValue)
+                .map(t -> {
+            try {
+                return t.getDate();
+            } catch (RepositoryException e) {
+                throw new IllegalStateException(e);
+            }
+        });
+        if (!allowNullReturnValue && !lastReplicationDate.isPresent()) {
+            throw new IllegalStateException("No replication property found with name  " + property.getName());
+        }
+        return lastReplicationDate.orElse(null);
     }
 
-    static String getLastReplicationAction(@NotNull DocViewNode2 node, @NotNull String agentName) throws IllegalStateException, RepositoryException {
-        // this logic is derived from com.day.cq.replication.impl.ReplicationStatusImpl.readAgentStatus(...)
+    public ReplicationActionType getLastReplicationAction(boolean allowNullReturnValue) {
+     // this logic is derived from com.day.cq.replication.impl.ReplicationStatusImpl.readAgentStatus(...)
         // and com.day.cq.wcm.core.impl.reference.ReferenceReplicationStatusProvider.initReplicationStatusMap(...)
-        DocViewProperty2 property = getProperty(node, agentName, AemReplicationMetadataValidator.CQ_NAMESPACE_URI, CQ_LAST_REPLICATION_ACTION);
-        return property.getStringValue().orElseThrow(() -> new IllegalStateException("Empty replication property found in  " + property.getName()));
-    }
-
-    public Calendar getLastPublished() {
-        try {
-            return getLastReplicationDate(node, agentName);
-        } catch (RepositoryException e) {
-            throw new IllegalStateException(e);
+        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, AemReplicationMetadataValidator.CQ_NAMESPACE_URI, CQ_LAST_REPLICATION_ACTION);
+        Optional<ReplicationActionType> replicationActionType = Optional.ofNullable(property)
+                .flatMap(DocViewProperty2::getStringValue)
+                .map(ReplicationActionType::fromName);
+        if (!allowNullReturnValue && !replicationActionType.isPresent()) {
+            throw new IllegalStateException("No replication property found with name  " + property.getName());
         }
-    }
-
-    public ReplicationActionType getLastReplicationAction() {
-        try {
-            return ReplicationActionType.fromName(getLastReplicationAction(node, agentName));
-        } catch (RepositoryException e) {
-            throw new IllegalStateException(e);
-        }
+        return replicationActionType.orElse(null);
     }
 
     /**

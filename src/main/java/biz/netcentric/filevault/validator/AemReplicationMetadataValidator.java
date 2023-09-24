@@ -59,13 +59,16 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
 
     private final @NotNull ValidationMessageSeverity validationMessageSeverity;
     private final @NotNull Map<Pattern, String> includedNodePathsPatternsAndTypes;
+    private final @NotNull Map<Pattern, String> excludedNodePathsPatternsAndTypes;
     private final boolean strictLastModificationCheck;
     private final @NotNull Set<@NotNull String> agentNames;
     private Queue<NodeMetadata> relevantNodeMetadata = Collections.asLifoQueue(new ArrayDeque<>());
 
-    public AemReplicationMetadataValidator(@NotNull ValidationMessageSeverity validationMessageSeverity, @NotNull Map<Pattern, String> includedNodePathsPatternsAndTypes, boolean strictLastModificationDateCheck, @NotNull Set<@NotNull String> agentNames) {
+    public AemReplicationMetadataValidator(@NotNull ValidationMessageSeverity validationMessageSeverity, @NotNull Map<Pattern, String> includedNodePathsPatternsAndTypes,
+            @NotNull Map<Pattern, String> excludedNodePathsPatternsAndTypes, boolean strictLastModificationDateCheck, @NotNull Set<@NotNull String> agentNames) {
         this.validationMessageSeverity = validationMessageSeverity;
         this.includedNodePathsPatternsAndTypes = includedNodePathsPatternsAndTypes;
+        this.excludedNodePathsPatternsAndTypes = excludedNodePathsPatternsAndTypes;
         this.strictLastModificationCheck = strictLastModificationDateCheck;
         this.agentNames = agentNames;
     }
@@ -91,21 +94,31 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         Optional<Entry<Pattern, String>> entry = includedNodePathsPatternsAndTypes.entrySet().stream()
                 .filter(e -> e.getKey().matcher(nodePath).matches())
                 .findFirst();
+        boolean isExclude = false;
         if (!entry.isPresent()) {
-            return Optional.empty();
+            entry = excludedNodePathsPatternsAndTypes.entrySet().stream()
+                    .filter(e -> e.getKey().matcher(nodePath).matches())
+                    .findFirst();
+            if (!entry.isPresent()) {
+                return Optional.empty();
+            } else {
+                LOGGER.debug("Potential excludedNodePathPatternAndType {}", entry.get());
+                isExclude = true;
+            }
+        } else {
+            LOGGER.debug("Potential includedNodePathPatternAndType {}", entry.get());
         }
-        LOGGER.debug("Potential includedNodePathPatternAndType {}", entry.get());
         boolean isNodeRelevant = isRelevantNodeType(node, entry.get().getValue());
         if (!isNodeRelevant) {
             return Optional.empty();
         } else {
             if (NameConstants.NT_PAGE.equals(entry.get().getValue())) {
                 LOGGER.debug("Waiting for jcr:content below {}", nodePath);
-                currentMetadata = new NodeMetadata(nodePath + "/" + NameConstants.NN_CONTENT, true);
+                currentMetadata = new NodeMetadata(isExclude, nodePath + "/" + NameConstants.NN_CONTENT, true);
                 relevantNodeMetadata.add(currentMetadata);
                 return Optional.empty();
             } else {
-                currentMetadata = new NodeMetadata(nodePath, false);
+                currentMetadata = new NodeMetadata(isExclude, nodePath, false);
                 relevantNodeMetadata.add(currentMetadata);
                 return Optional.of(currentMetadata);
             }
