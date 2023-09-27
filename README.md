@@ -67,7 +67,7 @@ is enough.
 The node where the replication and modification metadata is located differs  depending on whether the affected content is inside a `cq:Page` (i.e. somewhere below its `jcr:content` node) or outside (this may be still below a `cq:Page` node but not within its `jcr:content` child). 
 
 * For the former (inside a `cq:Page`) both the replication and modification metadata is located directly inside the top-level `jcr:content` node of the container page (this affects e.g. editable templates' structure or policy mapping nodes) 
-* For the latter (outside a `cq:Page`) the replication metadata is located in a `jcr:content` node below the affected node and the modification metadata directly a propery on the affected node (this affects policy nodes with resource type `wcm/core/components/policy/policy`)
+* For the latter (outside a `cq:Page`) the replication metadata is located in a `jcr:content` node below the affected node and the modification metadata directly a property on the affected node (this affects policy nodes with resource type `wcm/core/components/policy/policy`)
 
 The `jcr:content` node carrying the replication metadata should have mix-in `cq:ReplicationStatus` (usually by adding the property `jcr:mixinTypes="[cq:ReplicationStatus]"`) but this is not a must.
 
