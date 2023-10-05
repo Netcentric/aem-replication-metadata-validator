@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import javax.jcr.RepositoryException;
 
+import org.apache.jackrabbit.spi.Name;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
 import org.apache.jackrabbit.vault.util.DocViewProperty2;
 import org.jetbrains.annotations.NotNull;
@@ -80,7 +81,7 @@ public class ReplicationMetadata {
             }
         });
         if (!allowNullReturnValue && !lastReplicationDate.isPresent()) {
-            throw new IllegalStateException("No replication property found with name  " + property.getName());
+            throw new IllegalStateException("No replication property found with name " + Optional.ofNullable(property).map(DocViewProperty2::getName).map(Name::toString).orElse("?"));
         }
         return lastReplicationDate.orElse(null);
     }
@@ -93,7 +94,7 @@ public class ReplicationMetadata {
                 .flatMap(DocViewProperty2::getStringValue)
                 .map(ReplicationActionType::fromName);
         if (!allowNullReturnValue && !replicationActionType.isPresent()) {
-            throw new IllegalStateException("No replication property found with name  " + property.getName());
+            throw new IllegalStateException("No replication property found with name " + Optional.ofNullable(property).map(DocViewProperty2::getName).map(Name::toString).orElse("?"));
         }
         return replicationActionType.orElse(null);
     }
