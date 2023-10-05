@@ -17,7 +17,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
-import java.util.Calendar;
 import java.util.Collections;
 
 import javax.jcr.RepositoryException;
@@ -43,21 +42,20 @@ class NodeMetadataTest {
         
         DocViewProperty2 lastModificationProperty = DocViewProperty2.parse(NameConstants.JCR_LASTMODIFIED, "{Date}1970-01-01T01:00:10.000+01:00");
         DocViewNode2 node = new DocViewNode2(NameConstants.JCR_ROOT, Collections.singleton(lastModificationProperty));
-        nodeMetadata.captureLastModificationDate(node, false);
+        nodeMetadata.captureLastModificationDate(node);
         Instant expectedInstant = Instant.ofEpochSecond(10);
         assertEquals(expectedInstant, nodeMetadata.getLastModificationDate().get().toInstant());
         
         lastModificationProperty = DocViewProperty2.parse(NodeMetadata.NAME_CQ_LAST_MODIFIED, "{Date}2022-01-02T00:00:00.000+01:00");
-        nodeMetadata.captureLastModificationDate(node, false);
+        nodeMetadata = new NodeMetadata(false, "my/path", false);
+        nodeMetadata.captureLastModificationDate(node);
         node = new DocViewNode2(NameConstants.JCR_ROOT, Collections.singleton(lastModificationProperty));
         assertEquals(expectedInstant, nodeMetadata.getLastModificationDate().get().toInstant());
         
+        nodeMetadata = new NodeMetadata(false, "my/path", false);
         node = new DocViewNode2(NameConstants.JCR_ROOT, Collections.emptySet());
-        nodeMetadata.captureLastModificationDate(node, false);
-        assertTrue(Calendar.getInstance().compareTo(nodeMetadata.getLastModificationDate().get()) > 0);
-        
-        nodeMetadata.captureLastModificationDate(node, true);
-        assertTrue(Calendar.getInstance().compareTo(nodeMetadata.getLastModificationDate().get()) < 0);
+        nodeMetadata.captureLastModificationDate(node);
+        assertFalse(nodeMetadata.getLastModificationDate().isPresent());
     }
 
 }

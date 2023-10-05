@@ -48,6 +48,7 @@ public class ReplicationMetadata {
     }
 
     static DocViewProperty2 getProperty(@NotNull DocViewNode2 node, @NotNull String agentName, boolean allowNullReturnValue, @NotNull String namespaceUri, String... propertyNames) {
+        // only use agent specific metadata if name is not "publish", replicating logic from com.day.cq.wcm.core.impl.reference.ReferenceReplicationStatusProvider.initReplicationStatusMap() line 67
         String metadataPropertySuffix = agentName.equals(DEFAULT_AGENT_NAME) ? "" : ("_" + agentName);
         List<String> suffixedPropertyNames = Arrays.stream(propertyNames).map(s -> s + metadataPropertySuffix).collect(Collectors.toList());
         for (String propertyName : suffixedPropertyNames) {
