@@ -91,7 +91,7 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
 
     static @NotNull Map<Pattern, String> parseNodePathPatternsAndTypes(String option) {
         return Pattern.compile(",").splitAsStream(option)
-                .map((entry) -> {
+                .map(entry -> {
                     int startType = entry.lastIndexOf('[');
                     if (startType == -1) {
                         throw new IllegalArgumentException("Each entry must end with a type enclosed by \"[\" and \"]\", but found entry " + entry);

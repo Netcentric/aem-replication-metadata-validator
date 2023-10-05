@@ -127,11 +127,9 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
 
     private static boolean isRelevantNodeType(DocViewNode2 node, String type) {
         boolean isNodeRelevant = node.getPrimaryType().equals(Optional.of(type));
-        if (!isNodeRelevant) {
-            // if node type == nt:unstructured, evaluate sling:resourceType instead
-            if (node.getPrimaryType().equals(Optional.of(JcrConstants.NT_UNSTRUCTURED))) {
-                isNodeRelevant = node.getPropertyValue(NAME_SLING_RESOURCETYPE).equals(Optional.of(type));
-            }
+        // if node type == nt:unstructured, evaluate sling:resourceType instead
+        if (!isNodeRelevant && (node.getPrimaryType().equals(Optional.of(JcrConstants.NT_UNSTRUCTURED)))) {
+            isNodeRelevant = node.getPropertyValue(NAME_SLING_RESOURCETYPE).equals(Optional.of(type));
         }
         return isNodeRelevant;
     }
