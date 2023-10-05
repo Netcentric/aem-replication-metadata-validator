@@ -19,8 +19,8 @@ This artifact provides a validator implementation for the [FileVault Validation 
 
 The following repository locations are considered by default which must contain replication metadata indicating that the node is *published and not modified*:
 
-1. [Editable templates][page-templates]' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`)
-1. [Editable templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`), this includes both *policy mappings* (with resource type=`wcm/core/components/policies/mappings`) as well as *actual policies* (with resource type=`wcm/core/components/policy/policy`). The latter are also found outside actual editable templates.
+1. [Editable templates][page-templates]' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`, only outside `/libs` and `/apps`)
+1. [Editable templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`), this includes both *policy mappings* (with resource type=`wcm/core/components/policies/mappings`) as well as *actual policies* (with resource type=`wcm/core/components/policy/policy`, only outside `/libs`). The latter are also found outside actual editable templates.
 1. Generic [Sling Context-Aware configurations][ca-configs] (as found by [`com.adobe.cq.wcm.core.components.internal.services.CaConfigReferenceProvider`](https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java))
 
 Those locations are given through the default value for `includedNodePathPatternsAndTypes`. This default set can be overridden through the settings outlined below to check for other nodes.
