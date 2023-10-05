@@ -151,7 +151,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         NodeMetadata currentMetadata = optionalCurrentMetadata.get();
         if (currentMetadata.getPath().equals(nodeContext.getNodePath())) {
             try {
-                currentMetadata.captureLastModificationDate(node, strictLastModificationCheck);
+                currentMetadata.captureLastModificationDate(node);
             } catch (IllegalStateException|RepositoryException e) {
                 return Collections.singletonList(new ValidationMessage(validationMessageSeverity, "Invalid last modification date found", e));
             }
@@ -178,7 +178,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
             if (currentMetadata.decreaseCurrentNodeNestingLevel()) {
                 LOGGER.debug("End waiting for jcr:content below {}", currentMetadata.getPath());
                 iterator.remove();
-                return currentMetadata.validate(validationMessageSeverity, agentNames);
+                return currentMetadata.validate(validationMessageSeverity, agentNames, strictLastModificationCheck);
             }
         }
         return null;
