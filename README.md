@@ -66,7 +66,7 @@ The node where the replication and modification metadata is located differs  dep
 * For the former (inside a `cq:Page`) both the replication and modification metadata is located directly inside the top-level `jcr:content` node of the container page (this affects e.g. editable templates' structure or policy mapping nodes) 
 * For the latter (outside a `cq:Page`) the replication metadata is located in a `jcr:content` node below the affected node and the modification metadata directly a property on the affected node (this affects policy nodes with resource type `wcm/core/components/policy/policy`)
 
-The `jcr:content` node carrying the replication metadata should have mix-in `cq:ReplicationStatus` (usually by adding the property `jcr:mixinTypes="[cq:ReplicationStatus]"`) but this is not a must.
+The `jcr:content` node carrying the replication metadata may have mix-in `cq:ReplicationStatus` for AEM 6.5 (usually by adding the property `jcr:mixinTypes="[cq:ReplicationStatus]"`) or `cq:ReplicationStatus2` (only available in AEMaaCS) but this is optional, as the node type `nt:unstructured` of the `jcr:content` node does not impose any property limitations.
 
 # Usage with Maven
 
