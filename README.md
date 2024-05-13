@@ -7,7 +7,7 @@
 
 # Overview
 
-Validates that FileVault content packages contain replication metadata (`cq:lastReplicationAction` and optionally `cq:lastReplicated`/`cq:lastPublished` properties) in certain nodes. The last action must have value `Activate` and the value of the `cq:lastReplicated`/`cq:lastPublished` property must be newer than the last modification date property of the node (if both are not set, the last replication date is assumed to be newer than the last modification).
+Validates that FileVault content packages contain replication metadata (`cq:lastReplicationAction` and optionally `cq:lastReplicated`/`cq:lastPublished` properties) in certain nodes. The last action must have value `Activate` and the value of the `cq:lastReplicated`/`cq:lastPublished` property must be newer than the last modification date property of the node (the last modification date is optional, but the last replication date is mandatory).
 This is important for all content packages which are installed on both Author and Publish to make the Author instance aware of the fact that the according page/resource is already active in the latest version. AEM Author checks for outdated and non-published references via implementations of [`com.adobe.granite.references.ReferenceProvider`][4].
 Every reference which is not detected as published in the most recent version (i.e. has missing/incorrect metadata) will be [selected for activation along with the referencing page][aem-publish] which is *unnecessary* for nodes already existing on the publish *and often fails* due to missing permissions of the user. In the worst case such references block the replication queue (for immutable references below `/apps` in AEM as a Cloud Service).
 
@@ -44,24 +44,27 @@ Option | Mandatory | Description | Default Value | Since Version
 
 # Fix Violations
 
-When the validator detects issues those can be fixed by manually adding a `cq:lastReplicationAction` property to the according node in the underlying [DocView XML file][docview-xml] (potentially with an agent-specific suffix like `_preview`). The `cq:lastReplicationAction` property must be set to value `Activate`. The `cq:lastReplicated` property must contain a date value which is newer than the date given in either the `cq:lastModified` or `jcr:lastModified` property. If no modification date is set then no `cq:lastReplicated` property must be set either. 
+When the validator detects issues those can be fixed by manually adding a `cq:lastReplicationAction` and `cq:lastReplicated` properties to the according node in the underlying [DocView XML file][docview-xml] (potentially with an agent-specific suffix like `_preview`). The `cq:lastReplicationAction` property must be set to value `Activate`. The `cq:lastReplicated` property must contain a date value which is newer than the date given in either the `cq:lastModified` or `jcr:lastModified` property. If no modification date is set then any `cq:lastReplicated` date is sufficient (is is mandatory, though). 
 
 For example, adding 
 
 ```
+cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"
+cq:lastReplicated_preview="{Date}2022-01-01T00:00:00.000+01:00
 cq:lastReplicationAction="Activate"
 cq:lastReplicationAction_preview="Activate"
 ```
 
-can be added to the node which is supposed to be detected as active in the last version on both default publish and preview tiers on AEM as a Cloud Service (in case no last modification date is set). For regular AEM 6.5 environments just adding 
+to the node which is supposed to be detected as active in the last version on both default publish and preview tiers on AEM as a Cloud Service (in case no last modification date is set). For regular AEM 6.5 environments just adding 
 
 ```
+cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"
 cq:lastReplicationAction="Activate"
 ```
 
 is enough.
 
-The node where the replication and modification metadata is located differs  depending on whether the affected content is inside a `cq:Page` (i.e. somewhere below its `jcr:content` node) or outside (this may be still below a `cq:Page` node but not within its `jcr:content` child). 
+The node where the replication and modification metadata is located differs depending on whether the affected content is inside a `cq:Page` (i.e. somewhere below its `jcr:content` node) or outside (this may be still below a `cq:Page` node but not within its `jcr:content` child). 
 
 * For the former (inside a `cq:Page`) both the replication and modification metadata is located directly inside the top-level `jcr:content` node of the container page (this affects e.g. editable templates' structure or policy mapping nodes) 
 * For the latter (outside a `cq:Page`) the replication metadata is located in a `jcr:content` node below the affected node and the modification metadata directly a property on the affected node (this affects policy nodes with resource type `wcm/core/components/policy/policy`)

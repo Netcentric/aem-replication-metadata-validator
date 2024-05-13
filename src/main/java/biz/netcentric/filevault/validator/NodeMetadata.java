@@ -147,27 +147,28 @@ public class NodeMetadata {
         } catch (IllegalStateException e) {
             validationMessages.add(new ValidationMessage(validationMessageSeverity, "No replication action set for agent " + agentName +": " + e.getMessage(), path, null, null, 0, 0, null));
         }
+        final Calendar lastReplicationDate;
+        try {
+            lastReplicationDate = replicationStatus.getLastReplicationDate(false);
+            // unfortunately this is not allowed to be null (always dereferenced in com.adobe.cq.xf.impl.servlet.ExperienceFragmentsReferencesServlet.writeJsonForReference)
+        } catch (IllegalStateException e) {
+            validationMessages.add(new ValidationMessage(validationMessageSeverity, "No replication date set for agent " + agentName +": " + e.getMessage(), path, null, null, 0, 0, null));
+            return;
+        }
         if (!lastModificationDate.isPresent()) {
             if (strictLastModificationCheck) {
                 validationMessages.add(new ValidationMessage(validationMessageSeverity, "No last modification property set and don't fall back to -1 due to strict check option", path, null, null, 0, 0, null));
             } else {
-                // accept no replication date in case no modification date is set either
-                Calendar lastReplicationDate = replicationStatus.getLastReplicationDate(true);
-                if (lastReplicationDate != null && (lastReplicationDate.getTimeInMillis() < 0L)) {
+                if (lastReplicationDate.getTimeInMillis() < 0L) {
                         validationMessages.add(new ValidationMessage(validationMessageSeverity, "The replication date " + lastReplicationDate.toInstant().toString() + " for agent " + agentName
                                 + " is older than the implicit last modification date 0", path, null, null, 0, 0, null));
                 }
             }
         } else {
-            try {
-                Calendar lastReplicationDate = replicationStatus.getLastReplicationDate(false);
-                // Logic from com.day.cq.wcm.core.impl.reference.converter.AssetJSONItemConverter.referenceToJSONObject()
-                if (lastReplicationDate.compareTo(lastModificationDate.get()) < 0) {
-                    validationMessages.add(new ValidationMessage(validationMessageSeverity, "The replication date " + lastReplicationDate.toInstant().toString() + " for agent " + agentName
-                            + " is older than the last modification date " + lastModificationDate.get().toInstant().toString(), path, null, null, 0, 0, null));
-                }
-            } catch (IllegalStateException e) {
-                validationMessages.add(new ValidationMessage(validationMessageSeverity, "No replication date set for agent " + agentName +": " + e.getMessage(), path, null, null, 0, 0, null));
+            // Logic from com.day.cq.wcm.core.impl.reference.converter.AssetJSONItemConverter.referenceToJSONObject()
+            if (lastReplicationDate.compareTo(lastModificationDate.get()) < 0) {
+                validationMessages.add(new ValidationMessage(validationMessageSeverity, "The replication date " + lastReplicationDate.toInstant().toString() + " for agent " + agentName
+                        + " is older than the last modification date " + lastModificationDate.get().toInstant().toString(), path, null, null, 0, 0, null));
             }
         }
     }
