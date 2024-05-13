@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>biz.netcentric.filevault.validator</groupId>
     <artifactId>aem-replication-metadata-validator</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3-SNAPSHOT</version>
 
     <name>AEM Replication Metadata FileVault Validator</name>
     <description>FileVault validator which verifies that certain nodes have replication metadata which marks it as being already published in its latest version (useful e.g. for Sling Context-Aware Configuration deployed via packages to both author and publish).</description>
@@ -34,7 +34,7 @@
         <connection>scm:git:ssh://git@github.com/Netcentric/aem-replication-metadata-validator.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/Netcentric/aem-replication-metadata-validator.git</developerConnection>
         <url>https://github.com/Netcentric/aem-replication-metadata-validator.git</url>
-    <tag>1.3.2</tag>
+    <tag>HEAD</tag>
   </scm>
     <distributionManagement>
         <snapshotRepository>
