@@ -65,12 +65,19 @@ cq:lastReplicationAction="Activate"
 
 is enough.
 
+## Metadata Properties Location
+
 The node where the replication and modification metadata is located differs depending on whether the affected content is inside a `cq:Page` (i.e. somewhere below its `jcr:content` node) or outside (this may be still below a `cq:Page` node but not within its `jcr:content` child). 
 
 * For the former (inside a `cq:Page`) both the replication and modification metadata is located directly inside the top-level `jcr:content` node of the container page (this affects e.g. editable templates' structure or policy mapping nodes) 
 * For the latter (outside a `cq:Page`) the replication metadata is located in a `jcr:content` node below the affected node and the modification metadata directly a property on the affected node (this affects policy nodes with resource type `wcm/core/components/policy/policy`)
 
-The `jcr:content` node carrying the replication metadata may have mix-in `cq:ReplicationStatus` for AEM 6.5 (usually by adding the property `jcr:mixinTypes="[cq:ReplicationStatus]"`) or `cq:ReplicationStatus2` (only available in AEMaaCS) but this is optional, as the node type `nt:unstructured` of the `jcr:content` node does not impose any property limitations.
+## Optional Mixins
+
+The `jcr:content` node carrying the replication metadata may have [mixin type][mixin-type] `cq:ReplicationStatus` for AEM 6.5 (usually by adding the property `jcr:mixinTypes="[cq:ReplicationStatus]"`) or `cq:ReplicationStatus2` (only available in AEMaaCS).
+While the former only defines replication properties without suffix the latter only defines replication properties with suffix `_publish` and `_preview`.
+
+Adding a mixin is optional, as the node type `nt:unstructured` or derived types like `cq:PageContent` of the `jcr:content` node do not impose any property limitations and the type is currently not used for any type based queries either.
 
 # Usage with Maven
 
@@ -116,3 +123,4 @@ However this approach only works if the according packages are replicated from t
 [docview-xml]: https://jackrabbit.apache.org/filevault/docview.html
 [preview-tier]: https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/sites/authoring/fundamentals/previewing-content.html?lang=en
 [segment-pages]: https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/content/sites/authoring/personalization/contexthub-segmentation
+[mixin-type]: https://jackrabbit.apache.org/jcr/node-types.html#primary-vs-mixin
