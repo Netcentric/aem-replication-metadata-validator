@@ -19,9 +19,10 @@ This artifact provides a validator implementation for the [FileVault Validation 
 
 The following repository locations are considered by default which must contain replication metadata indicating that the node is *published and not modified*:
 
-1. [Editable templates][page-templates]' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`, only outside `/libs` and `/apps`)
-1. [Editable templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`), this includes both *policy mappings* (with resource type=`wcm/core/components/policies/mappings`) as well as *actual policies* (with resource type=`wcm/core/components/policy/policy`, only outside `/libs`). The latter are also found outside actual editable templates.
+1. [Editable templates][page-templates]' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`)
+1. [Editable templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`), this includes both *policy mappings* (with resource type=`wcm/core/components/policies/mappings`) as well as *actual policies* (with resource type=`wcm/core/components/policy/policy`). The latter are also found outside actual editable templates.
 1. Generic [Sling Context-Aware configurations][ca-configs] (as found by [`com.adobe.cq.wcm.core.components.internal.services.CaConfigReferenceProvider`](https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java))
+1. [Segment Pages](segment-pages) (as found by `com.day.cq.personalization.impl.TargetedComponentReferenceProvider`)
 
 Those locations are given through the default value for `includedNodePathPatternsAndTypes`. This default set can be overridden through the settings outlined below to check for other nodes.
 
@@ -37,7 +38,7 @@ The following options are supported apart from the default settings mentioned in
 
 Option | Mandatory | Description | Default Value | Since Version
 --- | --- | --- | --- | ---
-`includedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `<regex>[<primary-type or sling:resourceType>]`. The given regular expression must match a given node path (fully) for the node to be checked for valid metadata. In addition the node must have the given primary type (or `sling:resourceType` in case the primary type is `nt:unstructured`). | `.*/settings/wcm/templates/[^/]*/structure[cq:Page], .*/settings/wcm/templates/[^/]*/policies[cq:Page], .*/settings/wcm/policies/.*[wcm/core/components/policy/policy], /(apps\|conf)/.*/(sling:configs\|settings/cloudconfigs)/.*[cq:Page])` | 1.0.0 
+`includedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `<regex>[<primary-type or sling:resourceType>]`. The given regular expression must match a given node path (fully) for the node to be checked for valid metadata. In addition the node must have the given primary type (or `sling:resourceType` in case the primary type is `nt:unstructured` or `cq:PageContent`). | `.*/settings/wcm/templates/[^/]*/structure[cq:Page], .*/settings/wcm/templates/[^/]*/policies[cq:Page], .*/settings/wcm/policies/.*[wcm/core/components/policy/policy], /(apps\|conf)/.*/(sling:configs\|settings/cloudconfigs)/.*[cq:Page]), /(apps|conf)/.*/jcr:content[cq/contexthub/components/segment-page]` | 1.0.0 
 `excludedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `<regex>[<primary-type or sling:resourceType>]`. The given regular expression must match a given node path (fully) for the node to be checked for missing metadata. In addition the node must have the given primary type (or `sling:resourceType` in case the primary type is `nt:unstructured`). | `.*/settings/wcm/templates/[^/]*/initial[cq:Page]` | 1.3.0 
 `strictLastModificationDateCheck` | no | `true` means that nodes without a last modification property should always lead to validation errors. Otherwise they are handled in a lenient fashion like AEM behaves (i.e. assumption is that the modification date is -1 which is older than all replication dates). | `false` | 1.0.0
 `agentNames` | no | Comma-separated list of replication/distribution agent names whose replication metadata should be checked. Only relevant for AEMaaCS where it should be set to `publish,preview` in case the [Preview tier][preview-tier] is used next to the regular publish service. | `publish` | 1.1.0
@@ -114,3 +115,4 @@ However this approach only works if the according packages are replicated from t
 [package-replication-status-updater]: https://adobe-consulting-services.github.io/acs-aem-commons/features/package-replication-status-updater/index.html
 [docview-xml]: https://jackrabbit.apache.org/filevault/docview.html
 [preview-tier]: https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/sites/authoring/fundamentals/previewing-content.html?lang=en
+[segment-pages]: https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/content/sites/authoring/personalization/contexthub-segmentation

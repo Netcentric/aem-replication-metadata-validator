@@ -52,6 +52,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
     static final ValueFactory VALUE_FACTORY = ValueFactoryImpl.getInstance();
     static final String CQ_NAMESPACE_URI = "http://www.day.com/jcr/cq/1.0"; // no constant defined in https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/constant-values.html
 
+    private static final String NT_CQ_PAGE_CONTENT = "cq:PageContent";
     private static final Name NAME_JCR_CONTENT = org.apache.jackrabbit.spi.commons.name.NameConstants.JCR_CONTENT;
     private static final Name NAME_SLING_RESOURCETYPE = NAME_FACTORY.create(JcrResourceConstants.SLING_NAMESPACE_URI, SlingConstants.PROPERTY_RESOURCE_TYPE);
 
@@ -128,7 +129,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
     private static boolean isRelevantNodeType(DocViewNode2 node, String type) {
         boolean isNodeRelevant = node.getPrimaryType().equals(Optional.of(type));
         // if node type == nt:unstructured, evaluate sling:resourceType instead
-        if (!isNodeRelevant && (node.getPrimaryType().equals(Optional.of(JcrConstants.NT_UNSTRUCTURED)))) {
+        if (!isNodeRelevant && (node.getPrimaryType().equals(Optional.of(JcrConstants.NT_UNSTRUCTURED)) || node.getPrimaryType().equals(Optional.of(NT_CQ_PAGE_CONTENT)))) {
             isNodeRelevant = node.getPropertyValue(NAME_SLING_RESOURCETYPE).equals(Optional.of(type));
         }
         return isNodeRelevant;
