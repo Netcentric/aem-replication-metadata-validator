@@ -139,6 +139,9 @@ public class NodeMetadata {
 
     private void validateIsPublished(ValidationMessageSeverity validationMessageSeverity, Collection<ValidationMessage> validationMessages, String agentName, boolean strictLastModificationCheck) {
         ReplicationMetadata replicationStatus = replicationStatusPerAgent.get(agentName);
+        if (replicationStatus == null) {
+            throw new IllegalStateException("Replication status not yet populated via captureReplicationMetadata() for node " + this.path);
+        }
         try {
             ReplicationActionType lastReplicationAction = replicationStatus.getLastReplicationAction(false);
             if (lastReplicationAction != ReplicationActionType.ACTIVATE) {
