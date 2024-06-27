@@ -44,6 +44,7 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     private static final @NotNull Set<@NotNull String> DEFAULT_AGENT_NAMES = Collections.singleton(ReplicationMetadata.DEFAULT_AGENT_NAME);
     private static final @NotNull Map<Pattern, String> DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultIncludeMap();
     private static final String RESOURCE_TYPE_SEGMENT_PAGE = "cq/contexthub/components/segment-page";
+    private static final String RESOURCE_TYPE_CONTENT_FRAGMENT_MODEL_PAGE = "dam/cfm/models/console/components/data/entity/default";
 
     private static Map<Pattern, String> createDefaultIncludeMap() {
         Map<Pattern, String> map = new HashMap<>();
@@ -53,6 +54,8 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
         map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/policies"), NameConstants.NT_PAGE);
         // mapped content policies (as found by com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider)
         map.put(Pattern.compile(".*/settings/wcm/policies/.*"), RESOURCE_TYPE_CONTENT_POLICY);
+        // content fragment models (as found by com.adobe.cq.dam.cfm.impl.search.ContentFragmentReferencePublishProvider)
+        map.put(Pattern.compile(".*/settings/dam/cfm/models/.*"), RESOURCE_TYPE_CONTENT_FRAGMENT_MODEL_PAGE);
         // regular context-aware configuration (as found by https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java)
         map.put(Pattern.compile("/(apps|conf)/.*/(sling:configs|settings/cloudconfigs)/.*"), NameConstants.NT_PAGE);
         // segment pages (as found by com.day.cq.personalization.impl.TargetedComponentReferenceProvider)

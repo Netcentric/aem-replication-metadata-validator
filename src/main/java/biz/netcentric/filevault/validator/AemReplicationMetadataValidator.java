@@ -72,6 +72,8 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         this.excludedNodePathsPatternsAndTypes = excludedNodePathsPatternsAndTypes;
         this.strictLastModificationCheck = strictLastModificationDateCheck;
         this.agentNames = agentNames;
+        
+        LOGGER.error("Map: {}", includedNodePathsPatternsAndTypes);
     }
 
     @Nullable
@@ -80,7 +82,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
     }
 
     /**
-     * Returns the node metadata this node path refers to (might be belonging to the parent, in case this has name "jcr:content")
+     * Returns the node metadata this node path refers to (might be belonging to the parent, in case this node has name "jcr:content")
      * @param nodePath
      * @param node
      * @return the node metadata or empty if not relevant
@@ -92,28 +94,38 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
                 nodePath.equals(currentMetadata.getPath()  + "/" + NameConstants.NN_CONTENT))) {
             return Optional.of(currentMetadata);
         }
-        Optional<Entry<Pattern, String>> entry = includedNodePathsPatternsAndTypes.entrySet().stream()
-                .filter(e -> e.getKey().matcher(nodePath).matches())
-                .findFirst();
+        // first check includes, then excludes, first match returning relevant metadata wins
         boolean isExclude = false;
-        if (!entry.isPresent()) {
-            entry = excludedNodePathsPatternsAndTypes.entrySet().stream()
-                    .filter(e -> e.getKey().matcher(nodePath).matches())
+        Optional<NodeMetadata> newMetadata = includedNodePathsPatternsAndTypes.entrySet().stream()
+                .map(e -> getNodeMetadata(false, nodePath, node, e))
+                .filter(Optional::isPresent) // only interested in first result returning new metadata
+                .map(Optional::get)
+                .findFirst();
+        if (!newMetadata.isPresent()) {
+            newMetadata = excludedNodePathsPatternsAndTypes.entrySet().stream()
+                    .map(e -> getNodeMetadata(true, nodePath, node, e))
+                    .filter(Optional::isPresent) // only interested in first result returning new metadata
+                    .map(Optional::get)
                     .findFirst();
-            if (!entry.isPresent()) {
-                return Optional.empty();
-            } else {
-                LOGGER.debug("Potential excludedNodePathPatternAndType {}", entry.get());
-                isExclude = true;
-            }
-        } else {
-            LOGGER.debug("Potential includedNodePathPatternAndType {}", entry.get());
+            isExclude = true;
         }
-        boolean isNodeRelevant = isRelevantNodeType(node, entry.get().getValue());
+        if (newMetadata.isPresent()) {
+            LOGGER.debug("Potential {} {}", isExclude ? "excludedNodePathPatternAndType" : "includedNodePathPatternAndType", newMetadata.get());
+        }
+        return newMetadata;
+        
+    }
+
+    private Optional<NodeMetadata> getNodeMetadata(boolean isExclude, @NotNull String nodePath, @NotNull DocViewNode2 node, Entry<Pattern, String> patternAndType) {
+        if (!patternAndType.getKey().matcher(nodePath).matches()) {
+            return Optional.empty();
+        }
+        NodeMetadata currentMetadata;
+        boolean isNodeRelevant = isRelevantNodeType(node, patternAndType.getValue());
         if (!isNodeRelevant) {
             return Optional.empty();
         } else {
-            if (NameConstants.NT_PAGE.equals(entry.get().getValue())) {
+            if (NameConstants.NT_PAGE.equals(patternAndType.getValue())) {
                 LOGGER.debug("Waiting for jcr:content below {}", nodePath);
                 currentMetadata = new NodeMetadata(isExclude, nodePath + "/" + NameConstants.NN_CONTENT, true);
                 relevantNodeMetadata.add(currentMetadata);

@@ -22,7 +22,8 @@ The following repository locations are considered by default which must contain 
 1. [Editable templates][page-templates]' structure nodes (as found by `com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider`)
 1. [Editable templates][page-templates]' policy nodes (as found by `com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider`), this includes both *policy mappings* (with resource type=`wcm/core/components/policies/mappings`) as well as *actual policies* (with resource type=`wcm/core/components/policy/policy`). The latter are also found outside actual editable templates.
 1. Generic [Sling Context-Aware configurations][ca-configs] (as found by [`com.adobe.cq.wcm.core.components.internal.services.CaConfigReferenceProvider`](https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java))
-1. [Segment Pages](segment-pages) (as found by `com.day.cq.personalization.impl.TargetedComponentReferenceProvider`)
+1. [Segment Pages][segment-pages] (as found by `com.day.cq.personalization.impl.TargetedComponentReferenceProvider`)
+1. [Content Fragment Models][content-fragment-models] (as found by `com.adobe.cq.dam.cfm.impl.search.ContentFragmentReferencePublishProvider`)
 
 Those locations are given through the default value for `includedNodePathPatternsAndTypes`. This default set can be overridden through the settings outlined below to check for other nodes.
 
@@ -124,3 +125,4 @@ However this approach only works if the according packages are replicated from t
 [preview-tier]: https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/sites/authoring/fundamentals/previewing-content.html?lang=en
 [segment-pages]: https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/content/sites/authoring/personalization/contexthub-segmentation
 [mixin-type]: https://jackrabbit.apache.org/jcr/node-types.html#primary-vs-mixin
+[content-fragment-models]: https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/content/assets/content-fragments/content-fragments-models

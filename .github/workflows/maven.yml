@@ -75,7 +75,7 @@ jobs:
               echo "MVN_GOAL=clean deploy org.sonarsource.scanner.maven:sonar-maven-plugin:sonar" >> $GITHUB_ENV
               echo "STEP_NAME_SUFFIX=(Deploys to OSSRH)" >> $GITHUB_ENV
             else
-              echo "MVN_GOAL=clean verify" >> $GITHUB_ENV
+              echo "MVN_GOAL=clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar" >> $GITHUB_ENV
             fi
           else
             echo "MVN_ADDITIONAL_OPTS=" >> $GITHUB_ENV
