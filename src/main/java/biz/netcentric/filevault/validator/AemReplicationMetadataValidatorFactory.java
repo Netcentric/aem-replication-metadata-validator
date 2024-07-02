@@ -48,7 +48,8 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
 
     private static Map<Pattern, String> createDefaultIncludeMap() {
         Map<Pattern, String> map = new HashMap<>();
-        // by default: editable templates (as found by com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider)
+        // by default: editable templates and their structure child (as found by com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider)
+        map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*"), NameConstants.NT_TEMPLATE);
         map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/structure"), NameConstants.NT_PAGE);
         // content policies mappings (as found by com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider)
         map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/policies"), NameConstants.NT_PAGE);

@@ -125,7 +125,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         if (!isNodeRelevant) {
             return Optional.empty();
         } else {
-            if (NameConstants.NT_PAGE.equals(patternAndType.getValue())) {
+            if (NameConstants.NT_PAGE.equals(patternAndType.getValue()) || NameConstants.NT_TEMPLATE.equals(patternAndType.getValue())) {
                 LOGGER.debug("Waiting for jcr:content below {}", nodePath);
                 currentMetadata = new NodeMetadata(isExclude, nodePath + "/" + NameConstants.NN_CONTENT, true);
                 relevantNodeMetadata.add(currentMetadata);

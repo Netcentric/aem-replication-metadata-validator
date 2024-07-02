@@ -4,5 +4,6 @@
     <jcr:content
         jcr:primaryType="cq:PageContent"
         jcr:title="Page Template"
+        cq:lastReplicationAction="Activate"
         status="enabled"/>
 </jcr:root>
