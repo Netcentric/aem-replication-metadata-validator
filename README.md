@@ -8,7 +8,7 @@
 # Overview
 
 Validates that FileVault content packages contain replication metadata (`cq:lastReplicationAction` and optionally `cq:lastReplicated`/`cq:lastPublished` properties) in certain nodes. The last action must have value `Activate` and the value of the `cq:lastReplicated`/`cq:lastPublished` property must be newer than the last modification date property of the node (the last modification date is optional, but the last replication date is mandatory).
-This is important for all content packages which are installed on both Author and Publish to make the Author instance aware of the fact that the according page/resource is already active in the latest version. AEM Author checks for outdated and non-published references via implementations of [`com.adobe.granite.references.ReferenceProvider`][4].
+This is important for all content packages which are installed on both Author and Publish to make the Author instance aware of the fact that the according page/resource is already active in the latest version. AEM Author checks for outdated and non-published references via implementations of [`com.day.cq.wcm.api.reference.ReferenceProvider`][4].
 Every reference which is not detected as published in the most recent version (i.e. has missing/incorrect metadata) will be [selected for activation along with the referencing page][aem-publish] which is *unnecessary* for nodes already existing on the publish *and often fails* due to missing permissions of the user. In the worst case such references block the replication queue (for immutable references below `/apps` in AEM as a Cloud Service).
 
 For AEM as a Cloud Service the author service maintains separate replication statuses for publish and preview tiers. Those are captured in a `cq:lastReplicated_preview`/`cq:lastReplicationAction_preview` property for the [preview tier][preview-tier], while for the publish tier they are captured in both `cq:lastReplicated`/`cq:lastReplicationAction` and `cq:lastReplicated_publish`/`cq:lastReplicationAction_publish` (the properties with and without agent suffix are carrying the same value, but only the former is evaluated for detecting the replication status on the publish tier).
@@ -116,7 +116,7 @@ However this approach only works if the according packages are replicated from t
 [aemanalyser-maven-plugin]: https://github.com/adobe/aemanalyser-maven-plugin/tree/main/aemanalyser-maven-plugin
 [2]: https://jackrabbit.apache.org/filevault/validation.html
 [3]: https://jackrabbit.apache.org/filevault-package-maven-plugin/index.html
-[4]: https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/com/adobe/granite/references/ReferenceProvider.html
+[4]: https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/com/day/cq/wcm/api/reference/ReferenceProvider.html
 [page-templates]: https://experienceleague.adobe.com/docs/experience-manager-65/developing/platform/templates/page-templates-editable.html
 [ca-configs]: https://sling.apache.org/documentation/bundles/context-aware-configuration/context-aware-configuration.html
 [aem-publish]: https://experienceleague.adobe.com/docs/experience-manager-cloud-service/content/sites/authoring/fundamentals/publishing-pages.html
