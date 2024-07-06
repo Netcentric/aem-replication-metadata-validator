@@ -12,11 +12,10 @@
  */
 package biz.netcentric.filevault.validator;
 
-import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,49 +41,49 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     private static final String OPTION_STRICT_LAST_MODIFICATION_CHECK = "strictLastModificationDateCheck";
     private static final String OPTION_AGENT_NAMES = "agentNames";
     private static final @NotNull Set<@NotNull String> DEFAULT_AGENT_NAMES = Collections.singleton(ReplicationMetadata.DEFAULT_AGENT_NAME);
-    private static final @NotNull Map<Pattern, String> DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultIncludeMap();
+    private static final @NotNull Collection<TypeSettings> DEFAULT_INCLUDED_TYPES_SETTINGS = createDefaultIncludedTypesSettings();
     private static final String RESOURCE_TYPE_SEGMENT_PAGE = "cq/contexthub/components/segment-page";
     private static final String RESOURCE_TYPE_CONTENT_FRAGMENT_MODEL_PAGE = "dam/cfm/models/console/components/data/entity/default";
 
-    private static Map<Pattern, String> createDefaultIncludeMap() {
-        Map<Pattern, String> map = new HashMap<>();
+    private static Collection<TypeSettings> createDefaultIncludedTypesSettings() {
+        Collection<TypeSettings> typesSettings = new ArrayList<>();
         // by default: editable templates and their structure child (as found by com.day.cq.wcm.core.impl.reference.PageTemplateReferenceProvider)
-        map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*"), NameConstants.NT_TEMPLATE);
-        map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/structure"), NameConstants.NT_PAGE);
+        typesSettings.add(new TypeSettings(".*/settings/wcm/templates/[^/]*", NameConstants.NT_TEMPLATE));
+        typesSettings.add(new TypeSettings(".*/settings/wcm/templates/[^/]*/structure", NameConstants.NT_PAGE));
         // content policies mappings (as found by com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider)
-        map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/policies"), NameConstants.NT_PAGE);
+        typesSettings.add(new TypeSettings(".*/settings/wcm/templates/[^/]*/policies", NameConstants.NT_PAGE));
         // mapped content policies (as found by com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider)
-        map.put(Pattern.compile(".*/settings/wcm/policies/.*"), RESOURCE_TYPE_CONTENT_POLICY);
+        typesSettings.add(new TypeSettings(".*/settings/wcm/policies/.*", RESOURCE_TYPE_CONTENT_POLICY));
         // content fragment models (as found by com.adobe.cq.dam.cfm.impl.search.ContentFragmentReferencePublishProvider)
-        map.put(Pattern.compile(".*/settings/dam/cfm/models/.*"), RESOURCE_TYPE_CONTENT_FRAGMENT_MODEL_PAGE);
+        typesSettings.add(new TypeSettings(".*/settings/dam/cfm/models/.*", RESOURCE_TYPE_CONTENT_FRAGMENT_MODEL_PAGE));
         // regular context-aware configuration (as found by https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java)
-        map.put(Pattern.compile("/(apps|conf)/.*/(sling:configs|settings/cloudconfigs)/.*"), NameConstants.NT_PAGE);
+        typesSettings.add(new TypeSettings("/(apps|conf)/.*/(sling:configs|settings/cloudconfigs)/.*", NameConstants.NT_PAGE));
         // segment pages (as found by com.day.cq.personalization.impl.TargetedComponentReferenceProvider)
-        map.put(Pattern.compile("/(apps|conf)/.*/jcr:content"), RESOURCE_TYPE_SEGMENT_PAGE);
-        return Collections.unmodifiableMap(map);
+        typesSettings.add(new TypeSettings("/(apps|conf)/.*/jcr:content", RESOURCE_TYPE_SEGMENT_PAGE));
+        return Collections.unmodifiableCollection(typesSettings);
     }
 
-    private static final @NotNull Map<Pattern, String> DEFAULT_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES = createDefaultExcludeMap();
+    private static final @NotNull  Collection<TypeSettings> DEFAULT_EXCLUDED_TYPES_SETTINGS = createDefaultExcludedTypesSettings();
 
-    private static Map<Pattern, String> createDefaultExcludeMap() {
-        Map<Pattern, String> map = new HashMap<>();
-        map.put(Pattern.compile(".*/settings/wcm/templates/[^/]*/initial"), NameConstants.NT_PAGE);
-        return Collections.unmodifiableMap(map);
+    private static Collection<TypeSettings> createDefaultExcludedTypesSettings() {
+        Collection<TypeSettings> typesSettings = new ArrayList<>();
+        typesSettings.add(new TypeSettings(".*/settings/wcm/templates/[^/]*/initial", NameConstants.NT_PAGE));
+        return Collections.unmodifiableCollection(typesSettings);
     }
     
     @Nullable
     public Validator createValidator(@NotNull ValidationContext context, @NotNull ValidatorSettings settings) {
-        final @NotNull Map<Pattern, String> includedNodePathsPatternsAndTypes;
+        final @NotNull Collection<TypeSettings> includedTypesSettings;
         if (settings.getOptions().containsKey(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES)) {
-            includedNodePathsPatternsAndTypes = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
+            includedTypesSettings = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
         } else {
-            includedNodePathsPatternsAndTypes = DEFAULT_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES;
+            includedTypesSettings = DEFAULT_INCLUDED_TYPES_SETTINGS;
         }
-        final @NotNull Map<Pattern, String> excludedNodePathsPatternsAndTypes;
+        final @NotNull Collection<TypeSettings> excludedTypesSettings;
         if (settings.getOptions().containsKey(OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES)) {
-            excludedNodePathsPatternsAndTypes = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
+            excludedTypesSettings = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
         } else {
-            excludedNodePathsPatternsAndTypes = DEFAULT_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES;
+            excludedTypesSettings = DEFAULT_EXCLUDED_TYPES_SETTINGS;
         }
         boolean strictLastModificationDateCheck = Boolean.parseBoolean(settings.getOptions().get(OPTION_STRICT_LAST_MODIFICATION_CHECK));
         final @NotNull Set<@NotNull String> agentNames;
@@ -93,28 +92,29 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
         } else {
             agentNames = DEFAULT_AGENT_NAMES;
         }
-        return new AemReplicationMetadataValidator(settings.getDefaultSeverity(), includedNodePathsPatternsAndTypes, excludedNodePathsPatternsAndTypes, strictLastModificationDateCheck, agentNames);
+        return new AemReplicationMetadataValidator(settings.getDefaultSeverity(), includedTypesSettings, excludedTypesSettings, strictLastModificationDateCheck, agentNames);
     }
 
-    static @NotNull Map<Pattern, String> parseNodePathPatternsAndTypes(String option) {
+    static @NotNull Collection<TypeSettings> parseNodePathPatternsAndTypes(String option) {
         return Pattern.compile(",").splitAsStream(option)
-                .map(entry -> {
-                    int startType = entry.lastIndexOf('[');
-                    if (startType == -1) {
-                        throw new IllegalArgumentException("Each entry must end with a type enclosed by \"[\" and \"]\", but found entry " + entry);
-                    }
-                    if (entry.charAt(entry.length() - 1) != ']') {
-                        throw new IllegalArgumentException("Each entry must end  with \"]\", but found entry " + entry);
-                    }
-                    Pattern pattern = Pattern.compile(entry.substring(0, startType));
-                    String type = entry.substring(startType + 1, entry.length()-1);
-                    return new AbstractMap.SimpleEntry<>(pattern, type);
-                })
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue));
+                .map(AemReplicationMetadataValidatorFactory::parseTypeSettings)
+                .collect(Collectors.toList());
     }
- 
+
+    static @NotNull TypeSettings parseTypeSettings(String entry) {
+        int startType = entry.lastIndexOf('[');
+        if (startType == -1) {
+            throw new IllegalArgumentException("Each entry must end with a type enclosed by \"[\" and \"]\", but found entry " + entry);
+        }
+        if (entry.charAt(entry.length() - 1) != ']') {
+            throw new IllegalArgumentException("Each entry must end  with \"]\", but found entry " + entry);
+        }
+        
+        String pattern = entry.substring(0, startType);
+        String type = entry.substring(startType + 1, entry.length()-1);
+        return new TypeSettings(pattern, type);
+    }
+
     public boolean shouldValidateSubpackages() {
         return true;
     }

@@ -16,64 +16,45 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import javax.jcr.RepositoryException;
-import javax.jcr.ValueFactory;
 
 import org.apache.jackrabbit.spi.Name;
-import org.apache.jackrabbit.spi.NameFactory;
-import org.apache.jackrabbit.spi.commons.name.NameFactoryImpl;
 import org.apache.jackrabbit.util.Text;
-import org.apache.jackrabbit.value.ValueFactoryImpl;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
 import org.apache.jackrabbit.vault.validation.spi.DocumentViewXmlValidator;
 import org.apache.jackrabbit.vault.validation.spi.NodeContext;
 import org.apache.jackrabbit.vault.validation.spi.ValidationMessage;
 import org.apache.jackrabbit.vault.validation.spi.ValidationMessageSeverity;
-import org.apache.sling.api.SlingConstants;
-import org.apache.sling.jcr.resource.api.JcrResourceConstants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.day.cq.commons.jcr.JcrConstants;
 import com.day.cq.wcm.api.NameConstants;
 
 public class AemReplicationMetadataValidator implements DocumentViewXmlValidator {
 
-    static final NameFactory NAME_FACTORY = NameFactoryImpl.getInstance();
-    static final ValueFactory VALUE_FACTORY = ValueFactoryImpl.getInstance();
-    static final String CQ_NAMESPACE_URI = "http://www.day.com/jcr/cq/1.0"; // no constant defined in https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/constant-values.html
-
-    private static final String NT_CQ_PAGE_CONTENT = "cq:PageContent";
     private static final Name NAME_JCR_CONTENT = org.apache.jackrabbit.spi.commons.name.NameConstants.JCR_CONTENT;
-    private static final Name NAME_SLING_RESOURCETYPE = NAME_FACTORY.create(JcrResourceConstants.SLING_NAMESPACE_URI, SlingConstants.PROPERTY_RESOURCE_TYPE);
-
     private static final Logger LOGGER = LoggerFactory.getLogger(AemReplicationMetadataValidator.class);
 
     private final @NotNull ValidationMessageSeverity validationMessageSeverity;
-    private final @NotNull Map<Pattern, String> includedNodePathsPatternsAndTypes;
-    private final @NotNull Map<Pattern, String> excludedNodePathsPatternsAndTypes;
+    private final @NotNull Collection<TypeSettings> includedTypesSettings;
+    private final @NotNull Collection<TypeSettings> excludedTypesSettings;
     private final boolean strictLastModificationCheck;
     private final @NotNull Set<@NotNull String> agentNames;
     private Queue<NodeMetadata> relevantNodeMetadata = Collections.asLifoQueue(new ArrayDeque<>());
 
-    public AemReplicationMetadataValidator(@NotNull ValidationMessageSeverity validationMessageSeverity, @NotNull Map<Pattern, String> includedNodePathsPatternsAndTypes,
-            @NotNull Map<Pattern, String> excludedNodePathsPatternsAndTypes, boolean strictLastModificationDateCheck, @NotNull Set<@NotNull String> agentNames) {
+    public AemReplicationMetadataValidator(@NotNull ValidationMessageSeverity validationMessageSeverity, @NotNull Collection<TypeSettings> includedTypesSettings,
+            @NotNull Collection<TypeSettings> excludedTypesSettings, boolean strictLastModificationDateCheck, @NotNull Set<@NotNull String> agentNames) {
         this.validationMessageSeverity = validationMessageSeverity;
-        this.includedNodePathsPatternsAndTypes = includedNodePathsPatternsAndTypes;
-        this.excludedNodePathsPatternsAndTypes = excludedNodePathsPatternsAndTypes;
+        this.includedTypesSettings = includedTypesSettings;
+        this.excludedTypesSettings = excludedTypesSettings;
         this.strictLastModificationCheck = strictLastModificationDateCheck;
         this.agentNames = agentNames;
-        
-        LOGGER.error("Map: {}", includedNodePathsPatternsAndTypes);
     }
 
     @Nullable
@@ -96,13 +77,13 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         }
         // first check includes, then excludes, first match returning relevant metadata wins
         boolean isExclude = false;
-        Optional<NodeMetadata> newMetadata = includedNodePathsPatternsAndTypes.entrySet().stream()
+        Optional<NodeMetadata> newMetadata = includedTypesSettings.stream()
                 .map(e -> getNodeMetadata(false, nodePath, node, e))
                 .filter(Optional::isPresent) // only interested in first result returning new metadata
                 .map(Optional::get)
                 .findFirst();
         if (!newMetadata.isPresent()) {
-            newMetadata = excludedNodePathsPatternsAndTypes.entrySet().stream()
+            newMetadata = excludedTypesSettings.stream()
                     .map(e -> getNodeMetadata(true, nodePath, node, e))
                     .filter(Optional::isPresent) // only interested in first result returning new metadata
                     .map(Optional::get)
@@ -116,16 +97,13 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         
     }
 
-    private Optional<NodeMetadata> getNodeMetadata(boolean isExclude, @NotNull String nodePath, @NotNull DocViewNode2 node, Entry<Pattern, String> patternAndType) {
-        if (!patternAndType.getKey().matcher(nodePath).matches()) {
-            return Optional.empty();
-        }
-        NodeMetadata currentMetadata;
-        boolean isNodeRelevant = isRelevantNodeType(node, patternAndType.getValue());
-        if (!isNodeRelevant) {
+    private Optional<NodeMetadata> getNodeMetadata(boolean isExclude, @NotNull String nodePath, @NotNull DocViewNode2 node, @NotNull TypeSettings typeSettings) {
+        if (!typeSettings.matches(nodePath, node)) {
             return Optional.empty();
         } else {
-            if (NameConstants.NT_PAGE.equals(patternAndType.getValue()) || NameConstants.NT_TEMPLATE.equals(patternAndType.getValue())) {
+            String actualPrimaryType = node.getPrimaryType().orElse("");
+            NodeMetadata currentMetadata;
+            if (NameConstants.NT_PAGE.equals(actualPrimaryType) || NameConstants.NT_TEMPLATE.equals(actualPrimaryType)) {
                 LOGGER.debug("Waiting for jcr:content below {}", nodePath);
                 currentMetadata = new NodeMetadata(isExclude, nodePath + "/" + NameConstants.NN_CONTENT, true);
                 relevantNodeMetadata.add(currentMetadata);
@@ -136,15 +114,6 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
                 return Optional.of(currentMetadata);
             }
         }
-    }
-
-    private static boolean isRelevantNodeType(DocViewNode2 node, String type) {
-        boolean isNodeRelevant = node.getPrimaryType().equals(Optional.of(type));
-        // if node type == nt:unstructured, evaluate sling:resourceType instead
-        if (!isNodeRelevant && (node.getPrimaryType().equals(Optional.of(JcrConstants.NT_UNSTRUCTURED)) || node.getPrimaryType().equals(Optional.of(NT_CQ_PAGE_CONTENT)))) {
-            isNodeRelevant = node.getPropertyValue(NAME_SLING_RESOURCETYPE).equals(Optional.of(type));
-        }
-        return isNodeRelevant;
     }
 
     @Override
