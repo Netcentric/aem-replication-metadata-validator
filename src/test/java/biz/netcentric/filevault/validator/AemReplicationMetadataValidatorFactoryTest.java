@@ -12,21 +12,15 @@
  */
 package biz.netcentric.filevault.validator;
 
-import java.util.regex.Pattern;
-
 import org.assertj.core.api.Assertions;
-import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 
 class AemReplicationMetadataValidatorFactoryTest {
 
     @Test
     void test() {
-        // due to https://bugs.openjdk.org/browse/JDK-7163589 need custom condition for the pattern
         Assertions.assertThat(AemReplicationMetadataValidatorFactory.parseNodePathPatternsAndTypes("test[cq:Page]"))
-            .hasEntrySatisfying(new Condition<Pattern>(p -> p.pattern().equals("test"), "is pattern 'test'" ),
-                    new Condition<String>(s -> s.equals("cq:Page"), "is a page"))
-            .hasSize(1);
+            .contains(new TypeSettings("test", "cq:Page"));
     }
 
 }

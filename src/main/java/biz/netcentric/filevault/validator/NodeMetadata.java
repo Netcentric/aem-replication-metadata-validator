@@ -23,8 +23,12 @@ import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
+import javax.jcr.ValueFactory;
 
 import org.apache.jackrabbit.spi.Name;
+import org.apache.jackrabbit.spi.NameFactory;
+import org.apache.jackrabbit.spi.commons.name.NameFactoryImpl;
+import org.apache.jackrabbit.value.ValueFactoryImpl;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
 import org.apache.jackrabbit.vault.util.DocViewProperty2;
 import org.apache.jackrabbit.vault.validation.spi.ValidationMessage;
@@ -41,8 +45,12 @@ import biz.netcentric.filevault.validator.ReplicationMetadata.ReplicationActionT
  */
 public class NodeMetadata {
 
-    static final Name NAME_CQ_LAST_MODIFIED = AemReplicationMetadataValidator.NAME_FACTORY.create(AemReplicationMetadataValidator.CQ_NAMESPACE_URI, "lastModified");
-    private static final Name NAME_JCR_LAST_MODIFIED = AemReplicationMetadataValidator.NAME_FACTORY.create(Property.JCR_LAST_MODIFIED);
+    static final NameFactory NAME_FACTORY = NameFactoryImpl.getInstance();
+    static final ValueFactory VALUE_FACTORY = ValueFactoryImpl.getInstance();
+    static final String CQ_NAMESPACE_URI = "http://www.day.com/jcr/cq/1.0"; // no constant defined in https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/constant-values.html
+
+    static final Name NAME_CQ_LAST_MODIFIED = NAME_FACTORY.create(CQ_NAMESPACE_URI, "lastModified");
+    private static final Name NAME_JCR_LAST_MODIFIED = NAME_FACTORY.create(Property.JCR_LAST_MODIFIED);
 
     /**
      * If {@code true} the node is supposed to contain replication metadata which indicates it is active and not modified,
@@ -90,7 +98,7 @@ public class NodeMetadata {
                 .orElseGet(() -> node.getProperty(NAME_JCR_LAST_MODIFIED)
                 .orElse(null)));
         if (property.isPresent()) {
-            Value lastModifiedValue = AemReplicationMetadataValidator.VALUE_FACTORY.createValue(property.get().getStringValue().orElseThrow(() -> new IllegalStateException("No value found in " + property.get().getName())), PropertyType.DATE);
+            Value lastModifiedValue = VALUE_FACTORY.createValue(property.get().getStringValue().orElseThrow(() -> new IllegalStateException("No value found in " + property.get().getName())), PropertyType.DATE);
             lastModificationDate = Optional.of(lastModifiedValue.getDate());
         } else {
             // assume current date as last modified date (only for binaries and nodes with autocreated jcr:lastModified through mixin mix:lastModified)
