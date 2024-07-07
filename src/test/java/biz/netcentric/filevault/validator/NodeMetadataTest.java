@@ -13,49 +13,17 @@
 package biz.netcentric.filevault.validator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.Instant;
-import java.util.Collections;
-
-import javax.jcr.RepositoryException;
-
-import org.apache.jackrabbit.spi.commons.name.NameConstants;
-import org.apache.jackrabbit.vault.util.DocViewNode2;
-import org.apache.jackrabbit.vault.util.DocViewProperty2;
 import org.junit.jupiter.api.Test;
 
 class NodeMetadataTest {
 
     @Test
     void testGetPath() {
-        NodeMetadata nodeMetadata = new NodeMetadata(true, "my/path", false);
+        NodeMetadata nodeMetadata = new NodeMetadata(true, "my/path", false, DateProperty.MODIFIED);
         assertEquals("my/path", nodeMetadata.getPath());
         assertTrue(nodeMetadata.isExcluded);
-    }
-
-    @Test
-    void testCaptureLastModificationDate() throws IllegalStateException, RepositoryException {
-        NodeMetadata nodeMetadata = new NodeMetadata(false, "my/path", false);
-        assertFalse(nodeMetadata.isExcluded);
-        
-        DocViewProperty2 lastModificationProperty = DocViewProperty2.parse(NameConstants.JCR_LASTMODIFIED, "{Date}1970-01-01T01:00:10.000+01:00");
-        DocViewNode2 node = new DocViewNode2(NameConstants.JCR_ROOT, Collections.singleton(lastModificationProperty));
-        nodeMetadata.captureLastModificationDate(node);
-        Instant expectedInstant = Instant.ofEpochSecond(10);
-        assertEquals(expectedInstant, nodeMetadata.getLastModificationDate().get().toInstant());
-        
-        lastModificationProperty = DocViewProperty2.parse(NodeMetadata.NAME_CQ_LAST_MODIFIED, "{Date}2022-01-02T00:00:00.000+01:00");
-        nodeMetadata = new NodeMetadata(false, "my/path", false);
-        nodeMetadata.captureLastModificationDate(node);
-        node = new DocViewNode2(NameConstants.JCR_ROOT, Collections.singleton(lastModificationProperty));
-        assertEquals(expectedInstant, nodeMetadata.getLastModificationDate().get().toInstant());
-        
-        nodeMetadata = new NodeMetadata(false, "my/path", false);
-        node = new DocViewNode2(NameConstants.JCR_ROOT, Collections.emptySet());
-        nodeMetadata.captureLastModificationDate(node);
-        assertFalse(nodeMetadata.getLastModificationDate().isPresent());
     }
 
 }

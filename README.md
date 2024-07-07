@@ -7,7 +7,7 @@
 
 # Overview
 
-Validates that FileVault content packages contain replication metadata (`cq:lastReplicationAction` and optionally `cq:lastReplicated`/`cq:lastPublished` properties) in certain nodes. The last action must have value `Activate` and the value of the `cq:lastReplicated`/`cq:lastPublished` property must be newer than the last modification date property of the node (the last modification date is optional, but the last replication date is mandatory).
+Validates that FileVault content packages contain replication metadata (`cq:lastReplicationAction` and optionally `cq:lastReplicated`/`cq:lastPublished` properties) in certain nodes. The last action must have value `Activate` and the value of the `cq:lastReplicated`/`cq:lastPublished` property must be newer than the last modification (or in some cases the created) date property of the node (the last modification date is optional, but the last replication date is mandatory).
 This is important for all content packages which are installed on both Author and Publish to make the Author instance aware of the fact that the according page/resource is already active in the latest version. AEM Author checks for outdated and non-published references via implementations of [`com.day.cq.wcm.api.reference.ReferenceProvider`][4].
 Every reference which is not detected as published in the most recent version (i.e. has missing/incorrect metadata) will be [selected for activation along with the referencing page][aem-publish] which is *unnecessary* for nodes already existing on the publish *and often fails* due to missing permissions of the user. In the worst case such references block the replication queue (for immutable references below `/apps` in AEM as a Cloud Service).
 
@@ -39,14 +39,30 @@ The following options are supported apart from the default settings mentioned in
 
 Option | Mandatory | Description | Default Value | Since Version
 --- | --- | --- | --- | ---
-`includedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `<regex>[<primary-type or sling:resourceType>]`. The given regular expression must match a given node path (fully) for the node to be checked for valid metadata. In addition the node must have the given primary type (or `sling:resourceType` in case the primary type is `nt:unstructured` or `cq:PageContent`). | `.*/settings/wcm/templates/[^/]*/structure[cq:Page], .*/settings/wcm/templates/[^/]*/policies[cq:Page], .*/settings/wcm/policies/.*[wcm/core/components/policy/policy], /(apps\|conf)/.*/(sling:configs\|settings/cloudconfigs)/.*[cq:Page]), /(apps|conf)/.*/jcr:content[cq/contexthub/components/segment-page]` | 1.0.0 
-`excludedNodePathPatternsAndTypes` | no | Comma-separated list of items, where each item has the format `<regex>[<primary-type or sling:resourceType>]`. The given regular expression must match a given node path (fully) for the node to be checked for missing metadata. In addition the node must have the given primary type (or `sling:resourceType` in case the primary type is `nt:unstructured`). | `.*/settings/wcm/templates/[^/]*/initial[cq:Page]` | 1.3.0 
+`includedNodePathPatternsAndTypes` | no | Comma-separated list of node types, where each item has the format outlined below. | `.*/settings/wcm/templates/[^/]*[nt:Template], .*/settings/wcm/templates/[^/]*/structure[cq:Page], .*/settings/wcm/templates/[^/]*/policies[cq:Page], .*/settings/wcm/policies/.*[wcm/core/components/policy/policy], .*/settings/dam/cfm/models/.*[dam/cfm/models/console/components/data/entity/default], /(apps\|conf)/.*/(sling:configs\|settings/cloudconfigs)/.*[cq:Page]), /(apps\|conf)/.*/jcr:content[cq/contexthub/components/segment-page]` | 1.0.0 
+`excludedNodePathPatternsAndTypes` | no | Comma-separated list of node types, where each item has the format outlined below. | `.\*/settings/wcm/templates/[^/]*/initial[cq:Page]` | 1.3.0 
 `strictLastModificationDateCheck` | no | `true` means that nodes without a last modification property should always lead to validation errors. Otherwise they are handled in a lenient fashion like AEM behaves (i.e. assumption is that the modification date is -1 which is older than all replication dates). | `false` | 1.0.0
 `agentNames` | no | Comma-separated list of replication/distribution agent names whose replication metadata should be checked. Only relevant for AEMaaCS where it should be set to `publish,preview` in case the [Preview tier][preview-tier] is used next to the regular publish service. | `publish` | 1.1.0
 
+## Node type format
+
+Each node type given in the comma-separated list given in option `includedNodePathPatternsAndTypes` or `excludedNodePathPatternsAndTypes` has the following format:
+
+`<regex>[<jcr:primaryType or sling:resourceType>]{;<attributeName>=<attributeValue>}`. 
+
+The given regular expression must match the node's path (fully) for the node to be checked for valid metadata. In addition the node must have the given primary type (or `sling:resourceType` in case the primary type is `nt:unstructured` or `cq:PageContent`).
+
+Since version 1.4.0 you can additionally specify attributes per each node type.
+
+### Node type attributes
+
+Attribute Name | Allowed Attribute Values | Description | Since Version
+--- | --- | --- | ---
+`comparisonDate` | `MODIFIED` or `MODIFIED_CREATED_OR_CURRENT`. `MODIFIED` compares the replication date with either property `cq:lastModified` or `jcr:lastModified`. `MODIFIED_CREATED_OR_CURRENT` compares the replication date with property `cq:lastModified`, `jcr:lastModified` or `jcr:created` and falls back to the current date (if none of the previous properties are found). Default = `MODIFIED` | Determines the date property which should be compared with the `cq:lastReplicated` date. | 1.4.0
+
 # Fix Violations
 
-When the validator detects issues those can be fixed by manually adding a `cq:lastReplicationAction` and `cq:lastReplicated` properties to the according node in the underlying [DocView XML file][docview-xml] (potentially with an agent-specific suffix like `_preview`). The `cq:lastReplicationAction` property must be set to value `Activate`. The `cq:lastReplicated` property must contain a date value which is newer than the date given in either the `cq:lastModified` or `jcr:lastModified` property. If no modification date is set then any `cq:lastReplicated` date is sufficient (is is mandatory, though). 
+When the validator detects issues those can be fixed by manually adding a `cq:lastReplicationAction` and `cq:lastReplicated` properties to the according node in the underlying [DocView XML file][docview-xml] (potentially with an agent-specific suffix like `_preview`). The `cq:lastReplicationAction` property must be set to value `Activate`. The `cq:lastReplicated` property must contain a date value which is newer than the date given in either the `cq:lastModified` or `jcr:lastModified` (and for some items the `jcr:created`) property. If no modification/creation date is set then any `cq:lastReplicated` date is sufficient (is is mandatory, though). 
 
 For example, adding 
 

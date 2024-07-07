@@ -53,7 +53,7 @@ public class ReplicationMetadata {
         String metadataPropertySuffix = agentName.equals(DEFAULT_AGENT_NAME) ? "" : ("_" + agentName);
         List<String> suffixedPropertyNames = Arrays.stream(propertyNames).map(s -> s + metadataPropertySuffix).collect(Collectors.toList());
         for (String propertyName : suffixedPropertyNames) {
-            Optional<DocViewProperty2> property = node.getProperty(NodeMetadata.NAME_FACTORY.create(namespaceUri, propertyName));
+            Optional<DocViewProperty2> property = node.getProperty(NameConstants.NAME_FACTORY.create(namespaceUri, propertyName));
             if (property.isPresent()) {
                 return property.get();
             }
@@ -69,10 +69,10 @@ public class ReplicationMetadata {
     public Calendar getLastReplicationDate(boolean allowNullReturnValue) {
         // this logic is derived from com.day.cq.replication.impl.ReplicationStatusImpl.readAgentStatus(...)
         // and com.day.cq.wcm.core.impl.reference.ReferenceReplicationStatusProvider.initReplicationStatusMap(...)
-        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, NodeMetadata.CQ_NAMESPACE_URI, CQ_LAST_REPLICATED, CQ_LAST_PUBLISHED);
+        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, NameConstants.CQ_NAMESPACE_URI, CQ_LAST_REPLICATED, CQ_LAST_PUBLISHED);
         Optional<Calendar> lastReplicationDate = Optional.ofNullable(property)
                 .flatMap(DocViewProperty2::getStringValue)
-                .map(NodeMetadata.VALUE_FACTORY::createValue)
+                .map(NameConstants.VALUE_FACTORY::createValue)
                 .map(t -> {
             try {
                 return t.getDate();
@@ -89,7 +89,7 @@ public class ReplicationMetadata {
     public ReplicationActionType getLastReplicationAction(boolean allowNullReturnValue) {
      // this logic is derived from com.day.cq.replication.impl.ReplicationStatusImpl.readAgentStatus(...)
         // and com.day.cq.wcm.core.impl.reference.ReferenceReplicationStatusProvider.initReplicationStatusMap(...)
-        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, NodeMetadata.CQ_NAMESPACE_URI, CQ_LAST_REPLICATION_ACTION);
+        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, NameConstants.CQ_NAMESPACE_URI, CQ_LAST_REPLICATION_ACTION);
         Optional<ReplicationActionType> replicationActionType = Optional.ofNullable(property)
                 .flatMap(DocViewProperty2::getStringValue)
                 .map(ReplicationActionType::fromName);

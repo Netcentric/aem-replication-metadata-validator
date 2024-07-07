@@ -18,9 +18,17 @@ import org.junit.jupiter.api.Test;
 class AemReplicationMetadataValidatorFactoryTest {
 
     @Test
-    void test() {
-        Assertions.assertThat(AemReplicationMetadataValidatorFactory.parseNodePathPatternsAndTypes("test[cq:Page]"))
-            .contains(new TypeSettings("test", "cq:Page"));
+    void testParseTypesSettings() {
+        Assertions.assertThat(AemReplicationMetadataValidatorFactory.parseTypesSettings("test[cq:Page]"))
+            .containsExactly(new TypeSettings("test", "cq:Page"));
+        TypeSettings complexTypeSettings = new TypeSettings("anotherregex", "nt:unstructured");
+        complexTypeSettings.setComparisonDatePropery(DateProperty.MODIFIED_CREATED_OR_CURRENT);
+        Assertions.assertThat(AemReplicationMetadataValidatorFactory.parseTypesSettings("test[cq:Page],anotherregex[nt:unstructured];comparisonDate=MODIFIED_CREATED_OR_CURRENT"))
+            .containsExactly(new TypeSettings("test", "cq:Page"), complexTypeSettings);
+        
+        // test with whitespace after comma
+        Assertions.assertThat(AemReplicationMetadataValidatorFactory.parseTypesSettings("test[cq:Page], anotherregex[nt:unstructured];comparisonDate=MODIFIED_CREATED_OR_CURRENT"))
+        .containsExactly(new TypeSettings("test", "cq:Page"), complexTypeSettings);
     }
 
 }
