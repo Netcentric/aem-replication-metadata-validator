@@ -19,23 +19,12 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.jcr.Property;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
-import javax.jcr.Value;
-import javax.jcr.ValueFactory;
 
-import org.apache.jackrabbit.spi.Name;
-import org.apache.jackrabbit.spi.NameFactory;
-import org.apache.jackrabbit.spi.commons.name.NameFactoryImpl;
-import org.apache.jackrabbit.value.ValueFactoryImpl;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
-import org.apache.jackrabbit.vault.util.DocViewProperty2;
 import org.apache.jackrabbit.vault.validation.spi.ValidationMessage;
 import org.apache.jackrabbit.vault.validation.spi.ValidationMessageSeverity;
 import org.jetbrains.annotations.NotNull;
-
-import com.day.cq.commons.jcr.JcrConstants;
 
 import biz.netcentric.filevault.validator.ReplicationMetadata.ReplicationActionType;
 
@@ -45,14 +34,7 @@ import biz.netcentric.filevault.validator.ReplicationMetadata.ReplicationActionT
  */
 public class NodeMetadata {
 
-    static final NameFactory NAME_FACTORY = NameFactoryImpl.getInstance();
-    static final ValueFactory VALUE_FACTORY = ValueFactoryImpl.getInstance();
-    static final String CQ_NAMESPACE_URI = "http://www.day.com/jcr/cq/1.0"; // no constant defined in https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/constant-values.html
-
-    static final Name NAME_CQ_LAST_MODIFIED = NAME_FACTORY.create(CQ_NAMESPACE_URI, "lastModified");
-    private static final Name NAME_JCR_LAST_MODIFIED = NAME_FACTORY.create(Property.JCR_LAST_MODIFIED);
-
-    /**
+    /*
      * If {@code true} the node is supposed to contain replication metadata which indicates it is active and not modified,
      *  otherwise it should not contain any replication metadata at all
      */
@@ -60,17 +42,19 @@ public class NodeMetadata {
     /** this path always refers to the node supposed to contain the last modified property */
     private final String path;
     private final Map<String,ReplicationMetadata> replicationStatusPerAgent;
-    private Optional<Calendar> lastModificationDate;
+    private final DateProperty comparisonDateProperty;
+    private Optional<Map.Entry<Calendar, String>> comparisonDateAndLabel;
     /** helper variable to keep track of the nesting level below the node given by path, 0 means current node is the one supposed to contain the last modified property */
     private int currentNodeNestingLevel;
 
-    public NodeMetadata(boolean isExcluded, String path, boolean currentNodeIsParent) {
+    public NodeMetadata(boolean isExcluded, String path, boolean currentNodeIsParent, DateProperty comparisonDateProperty) {
         super();
         this.isExcluded = isExcluded;
         this.path = path;
         this.replicationStatusPerAgent = new HashMap<>();
-        lastModificationDate = Optional.empty();
+        comparisonDateAndLabel = Optional.empty();
         this.currentNodeNestingLevel = currentNodeIsParent ? -1 : 0;
+        this.comparisonDateProperty = comparisonDateProperty;
     }
 
     public String getPath() {
@@ -89,23 +73,12 @@ public class NodeMetadata {
         return --currentNodeNestingLevel < 0;
     }
 
-    public Optional<Calendar> getLastModificationDate() {
-        return lastModificationDate;
+    public Optional<Map.Entry<Calendar, String>> getComparisonDateAndLabel() {
+        return comparisonDateAndLabel;
     }
 
-    public void captureLastModificationDate(@NotNull DocViewNode2 node) throws IllegalStateException, RepositoryException {
-        Optional<DocViewProperty2> property = Optional.ofNullable(node.getProperty(NAME_CQ_LAST_MODIFIED)
-                .orElseGet(() -> node.getProperty(NAME_JCR_LAST_MODIFIED)
-                .orElse(null)));
-        if (property.isPresent()) {
-            Value lastModifiedValue = VALUE_FACTORY.createValue(property.get().getStringValue().orElseThrow(() -> new IllegalStateException("No value found in " + property.get().getName())), PropertyType.DATE);
-            lastModificationDate = Optional.of(lastModifiedValue.getDate());
-        } else {
-            // assume current date as last modified date (only for binaries and nodes with autocreated jcr:lastModified through mixin mix:lastModified)
-            if (node.getPrimaryType().orElse("").equals(JcrConstants.NT_RESOURCE) || node.getMixinTypes().contains(JcrConstants.MIX_LAST_MODIFIED)) {
-                lastModificationDate = Optional.of(Calendar.getInstance());
-            }
-        }
+    public void captureComparisonDate(@NotNull DocViewNode2 node) throws IllegalStateException, RepositoryException {
+        comparisonDateAndLabel = comparisonDateProperty.extractDate(node);
     }
 
     /**
@@ -166,7 +139,7 @@ public class NodeMetadata {
             validationMessages.add(new ValidationMessage(validationMessageSeverity, "No replication date set for agent " + agentName +": " + e.getMessage(), path, null, null, 0, 0, null));
             return;
         }
-        if (!lastModificationDate.isPresent()) {
+        if (!comparisonDateAndLabel.isPresent()) {
             if (strictLastModificationCheck) {
                 validationMessages.add(new ValidationMessage(validationMessageSeverity, "No last modification property set and don't fall back to -1 due to strict check option", path, null, null, 0, 0, null));
             } else {
@@ -177,9 +150,11 @@ public class NodeMetadata {
             }
         } else {
             // Logic from com.day.cq.wcm.core.impl.reference.converter.AssetJSONItemConverter.referenceToJSONObject()
-            if (lastReplicationDate.compareTo(lastModificationDate.get()) < 0) {
+            Calendar comparisonDate = comparisonDateAndLabel.get().getKey();
+            String comparisonDateLabel = comparisonDateAndLabel.get().getValue();
+            if (lastReplicationDate.compareTo(comparisonDate) < 0) {
                 validationMessages.add(new ValidationMessage(validationMessageSeverity, "The replication date " + lastReplicationDate.toInstant().toString() + " for agent " + agentName
-                        + " is older than the last modification date " + lastModificationDate.get().toInstant().toString(), path, null, null, 0, 0, null));
+                        + " is older than the comparison date " + comparisonDate.toInstant().toString() + " (" + comparisonDateLabel + ")" , path, null, null, 0, 0, null));
             }
         }
     }

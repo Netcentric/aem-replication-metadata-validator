@@ -105,11 +105,11 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
             NodeMetadata currentMetadata;
             if (NameConstants.NT_PAGE.equals(actualPrimaryType) || NameConstants.NT_TEMPLATE.equals(actualPrimaryType)) {
                 LOGGER.debug("Waiting for jcr:content below {}", nodePath);
-                currentMetadata = new NodeMetadata(isExclude, nodePath + "/" + NameConstants.NN_CONTENT, true);
+                currentMetadata = new NodeMetadata(isExclude, nodePath + "/" + NameConstants.NN_CONTENT, true, typeSettings.getComparisonDate());
                 relevantNodeMetadata.add(currentMetadata);
                 return Optional.empty();
             } else {
-                currentMetadata = new NodeMetadata(isExclude, nodePath, false);
+                currentMetadata = new NodeMetadata(isExclude, nodePath, false, typeSettings.getComparisonDate());
                 relevantNodeMetadata.add(currentMetadata);
                 return Optional.of(currentMetadata);
             }
@@ -131,7 +131,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         NodeMetadata currentMetadata = optionalCurrentMetadata.get();
         if (currentMetadata.getPath().equals(nodeContext.getNodePath())) {
             try {
-                currentMetadata.captureLastModificationDate(node);
+                currentMetadata.captureComparisonDate(node);
             } catch (IllegalStateException|RepositoryException e) {
                 return Collections.singletonList(new ValidationMessage(validationMessageSeverity, "Invalid last modification date found", e));
             }

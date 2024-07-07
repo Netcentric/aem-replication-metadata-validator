@@ -4,8 +4,8 @@
     allowedPaths="[/content/entities(/.*)?]"
     ranking="{Long}100">
     <jcr:content
-        cq:lastModified="{Date}2023-06-22T14:24:38.169+02:00"
-        cq:lastModifiedBy="admin"
+        cq:lastReplicationAction="Activate"
+        cq:lastReplicated="{Date}2022-01-01T00:00:00.000+01:00"
         cq:scaffolding="/conf/hcp-plus/settings/dam/cfm/models/speaker/jcr:content/model"
         cq:templateType="/libs/settings/dam/cfm/model-types/fragment"
         jcr:primaryType="cq:PageContent"

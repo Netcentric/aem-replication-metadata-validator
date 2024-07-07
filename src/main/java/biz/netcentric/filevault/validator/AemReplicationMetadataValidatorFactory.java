@@ -40,6 +40,7 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     private static final String OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES = "excludedNodePathPatternsAndTypes";
     private static final String OPTION_STRICT_LAST_MODIFICATION_CHECK = "strictLastModificationDateCheck";
     private static final String OPTION_AGENT_NAMES = "agentNames";
+    private static final String ATTRIBUTE_COMPARISON_DATE = "comparisonDate";
     private static final @NotNull Set<@NotNull String> DEFAULT_AGENT_NAMES = Collections.singleton(ReplicationMetadata.DEFAULT_AGENT_NAME);
     private static final @NotNull Collection<TypeSettings> DEFAULT_INCLUDED_TYPES_SETTINGS = createDefaultIncludedTypesSettings();
     private static final String RESOURCE_TYPE_SEGMENT_PAGE = "cq/contexthub/components/segment-page";
@@ -55,7 +56,9 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
         // mapped content policies (as found by com.day.cq.wcm.core.impl.reference.ContentPolicyReferenceProvider)
         typesSettings.add(new TypeSettings(".*/settings/wcm/policies/.*", RESOURCE_TYPE_CONTENT_POLICY));
         // content fragment models (as found by com.adobe.cq.dam.cfm.impl.search.ContentFragmentReferencePublishProvider)
-        typesSettings.add(new TypeSettings(".*/settings/dam/cfm/models/.*", RESOURCE_TYPE_CONTENT_FRAGMENT_MODEL_PAGE));
+        TypeSettings typeSettings = new TypeSettings(".*/settings/dam/cfm/models/.*", RESOURCE_TYPE_CONTENT_FRAGMENT_MODEL_PAGE);
+        typeSettings.setComparisonDatePropery(DateProperty.MODIFIED_CREATED_OR_CURRENT);
+        typesSettings.add(typeSettings);
         // regular context-aware configuration (as found by https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java)
         typesSettings.add(new TypeSettings("/(apps|conf)/.*/(sling:configs|settings/cloudconfigs)/.*", NameConstants.NT_PAGE));
         // segment pages (as found by com.day.cq.personalization.impl.TargetedComponentReferenceProvider)
@@ -75,13 +78,13 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     public Validator createValidator(@NotNull ValidationContext context, @NotNull ValidatorSettings settings) {
         final @NotNull Collection<TypeSettings> includedTypesSettings;
         if (settings.getOptions().containsKey(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES)) {
-            includedTypesSettings = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
+            includedTypesSettings = parseTypesSettings(settings.getOptions().get(OPTION_INCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
         } else {
             includedTypesSettings = DEFAULT_INCLUDED_TYPES_SETTINGS;
         }
         final @NotNull Collection<TypeSettings> excludedTypesSettings;
         if (settings.getOptions().containsKey(OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES)) {
-            excludedTypesSettings = parseNodePathPatternsAndTypes(settings.getOptions().get(OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
+            excludedTypesSettings = parseTypesSettings(settings.getOptions().get(OPTION_EXCLUDED_NODE_PATH_PATTERNS_AND_TYPES));
         } else {
             excludedTypesSettings = DEFAULT_EXCLUDED_TYPES_SETTINGS;
         }
@@ -95,26 +98,47 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
         return new AemReplicationMetadataValidator(settings.getDefaultSeverity(), includedTypesSettings, excludedTypesSettings, strictLastModificationDateCheck, agentNames);
     }
 
-    static @NotNull Collection<TypeSettings> parseNodePathPatternsAndTypes(String option) {
-        return Pattern.compile(",").splitAsStream(option)
+    static @NotNull Collection<TypeSettings> parseTypesSettings(String option) {
+        return Pattern.compile("\\s*,\\s*").splitAsStream(option)
                 .map(AemReplicationMetadataValidatorFactory::parseTypeSettings)
                 .collect(Collectors.toList());
     }
 
     static @NotNull TypeSettings parseTypeSettings(String entry) {
         int startType = entry.lastIndexOf('[');
-        if (startType == -1) {
-            throw new IllegalArgumentException("Each entry must end with a type enclosed by \"[\" and \"]\", but found entry " + entry);
+        int endType = entry.indexOf(']', startType);
+        if (startType == -1 || endType == -1) {
+            throw new IllegalArgumentException("Each entry must have a type enclosed by \"[\" and \"]\", but found entry " + entry);
         }
-        if (entry.charAt(entry.length() - 1) != ']') {
-            throw new IllegalArgumentException("Each entry must end  with \"]\", but found entry " + entry);
-        }
-        
         String pattern = entry.substring(0, startType);
-        String type = entry.substring(startType + 1, entry.length()-1);
-        return new TypeSettings(pattern, type);
+        String type = entry.substring(startType + 1, endType);
+        TypeSettings typeSettings = new TypeSettings(pattern, type);
+        if (endType < entry.length()-1) {
+            // type may have additional attributes separated by ";"
+            if (entry.charAt(endType+1) != ';') {
+                throw new IllegalArgumentException("Each entry may either end with the type enclosed by \"[\" and \"]\" or some attributes separated by \";\"");
+            }
+            String attributes = entry.substring(endType+2);
+            parseAttributes(typeSettings, attributes);
+        }
+        return typeSettings;
     }
 
+    static void parseAttributes(TypeSettings typeSettings, String attributes) {
+        for (String attribute : attributes.split(";")) {
+            String[] attributePair = attribute.split("=", 2);
+            if (attributePair.length != 2) {
+                throw new IllegalArgumentException("Each attribute must have the format \"name=value\" but found " + attribute);
+            }
+            String attributeName = attributePair[0];
+            String attributeValue = attributePair[1];
+            if (attributeName.equals(ATTRIBUTE_COMPARISON_DATE)) {
+                typeSettings.setComparisonDatePropery(DateProperty.valueOf(attributeValue));
+            } else {
+                throw new IllegalArgumentException("Unsupported attribute with name " + attributeName);
+            }
+        }
+    }
     public boolean shouldValidateSubpackages() {
         return true;
     }
