@@ -33,9 +33,9 @@ import org.junit.jupiter.api.Test;
 
 public class DatePropertyTest {
 
-    public static String ISO8601_DATE1 = "1970-01-01T01:00:10.000+01:00";
-    public static String ISO8601_DATE2 = "2022-01-02T00:00:00.000+01:00";
-    public static String ISO8601_DATE3 = "2024-01-02T00:00:00.000+01:00";
+    public static final String ISO8601_DATE1 = "1970-01-01T01:00:10.000+01:00";
+    public static final String ISO8601_DATE2 = "2022-01-02T00:00:00.000+01:00";
+    public static final String ISO8601_DATE3 = "2024-01-02T00:00:00.000+01:00";
     
     @Test
     void testExtractDateModified() throws IllegalStateException, RepositoryException {
