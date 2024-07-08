@@ -99,7 +99,8 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
     }
 
     static @NotNull Collection<TypeSettings> parseTypesSettings(String option) {
-        return Pattern.compile("\\s*,\\s*").splitAsStream(option)
+        return Pattern.compile(",").splitAsStream(option)
+                .map(String::trim) // ignore whitespaces around ","
                 .map(AemReplicationMetadataValidatorFactory::parseTypeSettings)
                 .collect(Collectors.toList());
     }
@@ -118,7 +119,7 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
             if (entry.charAt(endType+1) != ';') {
                 throw new IllegalArgumentException("Each entry may either end with the type enclosed by \"[\" and \"]\" or some attributes separated by \";\"");
             }
-            String attributes = entry.substring(endType+2);
+            String attributes = entry.substring(endType+2).trim(); // ignore whitespaces around ";"
             parseAttributes(typeSettings, attributes);
         }
         return typeSettings;
