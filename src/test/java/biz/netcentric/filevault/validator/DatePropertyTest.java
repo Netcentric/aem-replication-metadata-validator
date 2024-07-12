@@ -64,7 +64,7 @@ public class DatePropertyTest {
         assertTrue(result.isPresent());
         long delta = Duration.between(Instant.now(), result.get().getKey().toInstant()).toMillis();
         assertTrue(delta < 100);
-        assertEquals("auto created jcr:lastModified", result.get().getValue());
+        assertEquals("auto created {http://www.jcp.org/jcr/1.0}lastModified", result.get().getValue());
     }
 
     @Test
@@ -105,6 +105,6 @@ public class DatePropertyTest {
         assertTrue(result.isPresent());
         delta = Duration.between(Instant.now(), result.get().getKey().toInstant()).toMillis();
         assertTrue(delta < 100);
-        assertEquals("auto created jcr:created", result.get().getValue());
+        assertEquals("auto created {http://www.jcp.org/jcr/1.0}created", result.get().getValue());
     }
 }

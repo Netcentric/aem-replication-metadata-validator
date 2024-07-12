@@ -57,7 +57,7 @@ public class AemReplicationMetadataValidatorFactory implements ValidatorFactory 
         typesSettings.add(new TypeSettings(".*/settings/wcm/policies/.*", RESOURCE_TYPE_CONTENT_POLICY));
         // content fragment models (as found by com.adobe.cq.dam.cfm.impl.search.ContentFragmentReferencePublishProvider)
         TypeSettings typeSettings = new TypeSettings(".*/settings/dam/cfm/models/.*", RESOURCE_TYPE_CONTENT_FRAGMENT_MODEL_PAGE);
-        typeSettings.setComparisonDatePropery(DateProperty.MODIFIED_CREATED_OR_CURRENT);
+        typeSettings.setComparisonDatePropery(DateProperty.CQ_MODIFIED_CREATED_OR_CURRENT);
         typesSettings.add(typeSettings);
         // regular context-aware configuration (as found by https://github.com/adobe/aem-core-wcm-components/blob/main/bundles/core/src/main/java/com/adobe/cq/wcm/core/components/internal/services/CaConfigReferenceProvider.java)
         typesSettings.add(new TypeSettings("/(apps|conf)/.*/(sling:configs|settings/cloudconfigs)/.*", NameConstants.NT_PAGE));
