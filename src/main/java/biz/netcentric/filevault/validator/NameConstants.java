@@ -37,6 +37,7 @@ public class NameConstants {
     public static final @NotNull String NT_CQ_PAGE_CONTENT = "cq:PageContent";
 
     public static final @NotNull Name CQ_LAST_MODIFIED = NAME_FACTORY.create(CQ_NAMESPACE_URI, "lastModified");
+    public static final @NotNull Name CQ_CREATED = NAME_FACTORY.create(CQ_NAMESPACE_URI, "created");
     public static final @NotNull Name JCR_LASTMODIFIED = org.apache.jackrabbit.spi.commons.name.NameConstants.JCR_LASTMODIFIED;
     public static final @NotNull Name JCR_CREATED = org.apache.jackrabbit.spi.commons.name.NameConstants.JCR_CREATED;
     
