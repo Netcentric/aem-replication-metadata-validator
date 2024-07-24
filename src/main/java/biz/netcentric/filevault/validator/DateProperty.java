@@ -105,7 +105,7 @@ enum DateProperty {
         } else {
             // check for auto-created property
             Collection<String> types = new HashSet<>();
-            node.getPrimaryType().map(t -> types.add(t));
+            node.getPrimaryType().ifPresent(types::add);
             types.addAll(node.getMixinTypes());
             if (propertyName.getAutoCreatedTypes().stream().anyMatch(types::contains)) {
                 dateAndLabel = new SimpleEntry<>(Calendar.getInstance(), "auto created " + propertyName.getName().toString());
