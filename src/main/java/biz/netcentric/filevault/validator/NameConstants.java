@@ -34,11 +34,16 @@ public class NameConstants {
     public static final String CQ_NAMESPACE_URI = "http://www.day.com/jcr/cq/1.0"; // no constant defined in https://developer.adobe.com/experience-manager/reference-materials/6-5/javadoc/constant-values.html
 
     public static final @NotNull Name SLING_RESOURCETYPE = NAME_FACTORY.create(JcrResourceConstants.SLING_NAMESPACE_URI, SlingConstants.PROPERTY_RESOURCE_TYPE);
-    public static final @NotNull String NT_CQ_PAGE_CONTENT = "cq:PageContent";
-
     public static final @NotNull Name CQ_LAST_MODIFIED = NAME_FACTORY.create(CQ_NAMESPACE_URI, "lastModified");
     public static final @NotNull Name CQ_CREATED = NAME_FACTORY.create(CQ_NAMESPACE_URI, "created");
     public static final @NotNull Name JCR_LASTMODIFIED = org.apache.jackrabbit.spi.commons.name.NameConstants.JCR_LASTMODIFIED;
     public static final @NotNull Name JCR_CREATED = org.apache.jackrabbit.spi.commons.name.NameConstants.JCR_CREATED;
+    public static final @NotNull Name JCR_CONTENT = org.apache.jackrabbit.spi.commons.name.NameConstants.JCR_CONTENT;
+    
+    /* the following are not names but their lexical form (qualified names) */
+    public static final @NotNull String NT_CQ_PAGE_CONTENT = "cq:PageContent";
+    public static final @NotNull String NT_CQ_PAGE = com.day.cq.wcm.api.NameConstants.NT_PAGE;
+    public static final @NotNull String NT_CQ_TEMPLATE = com.day.cq.wcm.api.NameConstants.NT_TEMPLATE;
+    public static final @NotNull String QUALIFIED_NAME_JCR_CONTENT = com.day.cq.wcm.api.NameConstants.NN_CONTENT;
     
 }

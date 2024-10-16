@@ -15,6 +15,7 @@ package biz.netcentric.filevault.validator;
 import java.text.ChoiceFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -35,12 +36,17 @@ import org.jetbrains.annotations.NotNull;
 public class ReplicationMetadata {
 
     static final String DEFAULT_AGENT_NAME = "publish";
-    private static final String CQ_LAST_REPLICATED = "lastReplicated";
-    private static final String CQ_LAST_PUBLISHED = "lastPublished";
-    private static final String CQ_LAST_REPLICATION_ACTION = "lastReplicationAction";
+    // the following are just the local names of properties (without their namespace prefix)
+    private static final String LAST_REPLICATED = "lastReplicated";
+    private static final String LAST_PUBLISHED = "lastPublished";
+    private static final String LAST_REPLICATION_ACTION = "lastReplicationAction";
 
     private final @NotNull DocViewNode2 node;
     private final @NotNull String agentName;
+
+    private static final DocViewNode2 EMPTY_NODE = new DocViewNode2(NameConstants.JCR_CONTENT, Collections.emptyList());
+    // the node name does not matter
+    static final ReplicationMetadata EMPTY  = new ReplicationMetadata(EMPTY_NODE, DEFAULT_AGENT_NAME);
 
     public ReplicationMetadata(@NotNull DocViewNode2 node, @NotNull String agentName) {
         super();
@@ -69,7 +75,7 @@ public class ReplicationMetadata {
     public Calendar getLastReplicationDate(boolean allowNullReturnValue) {
         // this logic is derived from com.day.cq.replication.impl.ReplicationStatusImpl.readAgentStatus(...)
         // and com.day.cq.wcm.core.impl.reference.ReferenceReplicationStatusProvider.initReplicationStatusMap(...)
-        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, NameConstants.CQ_NAMESPACE_URI, CQ_LAST_REPLICATED, CQ_LAST_PUBLISHED);
+        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, NameConstants.CQ_NAMESPACE_URI, LAST_REPLICATED, LAST_PUBLISHED);
         Optional<Calendar> lastReplicationDate = Optional.ofNullable(property)
                 .flatMap(DocViewProperty2::getStringValue)
                 .map(NameConstants.VALUE_FACTORY::createValue)
@@ -89,7 +95,7 @@ public class ReplicationMetadata {
     public ReplicationActionType getLastReplicationAction(boolean allowNullReturnValue) {
      // this logic is derived from com.day.cq.replication.impl.ReplicationStatusImpl.readAgentStatus(...)
         // and com.day.cq.wcm.core.impl.reference.ReferenceReplicationStatusProvider.initReplicationStatusMap(...)
-        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, NameConstants.CQ_NAMESPACE_URI, CQ_LAST_REPLICATION_ACTION);
+        DocViewProperty2 property = getProperty(node, agentName, allowNullReturnValue, NameConstants.CQ_NAMESPACE_URI, LAST_REPLICATION_ACTION);
         Optional<ReplicationActionType> replicationActionType = Optional.ofNullable(property)
                 .flatMap(DocViewProperty2::getStringValue)
                 .map(ReplicationActionType::fromName);

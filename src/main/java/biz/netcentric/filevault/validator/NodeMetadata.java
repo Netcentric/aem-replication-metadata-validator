@@ -82,9 +82,9 @@ public class NodeMetadata {
     }
 
     /**
-     * This never fails until actually dereferencing data
-     * @param node
-     * @param agentNames
+     * This method never fails until actually dereferencing data in another method.
+     * @param node the node to capture replication metadata from
+     * @param agentNames the agent names to capture replication metadata for
      */
     public void captureReplicationMetadata(@NotNull DocViewNode2 node, @NotNull Collection<@NotNull String> agentNames) {
         for (String agentName : agentNames) {
@@ -121,7 +121,13 @@ public class NodeMetadata {
     private void validateIsPublished(ValidationMessageSeverity validationMessageSeverity, Collection<ValidationMessage> validationMessages, String agentName, boolean strictLastModificationCheck) {
         ReplicationMetadata replicationStatus = replicationStatusPerAgent.get(agentName);
         if (replicationStatus == null) {
-            throw new IllegalStateException("Replication status not yet populated via captureReplicationMetadata() for node " + this.path);
+            if (path.endsWith("/" + NameConstants.QUALIFIED_NAME_JCR_CONTENT)) {
+                validationMessages.add(new ValidationMessage(validationMessageSeverity, "No jcr:content node found at all where replication data would have been captured for agent " + agentName, path, null, null, 0, 0, null));
+            } else {
+                // this is a programming error most probably
+                validationMessages.add(new ValidationMessage(validationMessageSeverity, "Replication status not yet populated via captureReplicationMetadata() for agent " + agentName, path, null, null, 0, 0, null));
+            }
+            replicationStatus = ReplicationMetadata.EMPTY;
         }
         try {
             ReplicationActionType lastReplicationAction = replicationStatus.getLastReplicationAction(false);
