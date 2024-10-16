@@ -22,7 +22,6 @@ import java.util.Set;
 
 import javax.jcr.RepositoryException;
 
-import org.apache.jackrabbit.spi.Name;
 import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
 import org.apache.jackrabbit.vault.validation.spi.DocumentViewXmlValidator;
@@ -34,11 +33,8 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.day.cq.wcm.api.NameConstants;
-
 public class AemReplicationMetadataValidator implements DocumentViewXmlValidator {
 
-    private static final Name NAME_JCR_CONTENT = org.apache.jackrabbit.spi.commons.name.NameConstants.JCR_CONTENT;
     private static final Logger LOGGER = LoggerFactory.getLogger(AemReplicationMetadataValidator.class);
 
     private final @NotNull ValidationMessageSeverity validationMessageSeverity;
@@ -72,7 +68,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         NodeMetadata currentMetadata = relevantNodeMetadata.peek();
         if (currentMetadata != null && (
                 nodePath.equals(currentMetadata.getPath()) ||
-                nodePath.equals(currentMetadata.getPath()  + "/" + NameConstants.NN_CONTENT))) {
+                nodePath.equals(currentMetadata.getPath()  + "/" + NameConstants.QUALIFIED_NAME_JCR_CONTENT))) {
             return Optional.of(currentMetadata);
         }
         // first check includes, then excludes, first match returning relevant metadata wins
@@ -103,9 +99,9 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
         } else {
             String actualPrimaryType = node.getPrimaryType().orElse("");
             NodeMetadata currentMetadata;
-            if (NameConstants.NT_PAGE.equals(actualPrimaryType) || NameConstants.NT_TEMPLATE.equals(actualPrimaryType)) {
+            if (NameConstants.NT_CQ_PAGE.equals(actualPrimaryType) || NameConstants.NT_CQ_TEMPLATE.equals(actualPrimaryType)) {
                 LOGGER.debug("Waiting for jcr:content below {}", nodePath);
-                currentMetadata = new NodeMetadata(isExclude, nodePath + "/" + NameConstants.NN_CONTENT, true, typeSettings.getComparisonDate());
+                currentMetadata = new NodeMetadata(isExclude, nodePath + "/" + NameConstants.QUALIFIED_NAME_JCR_CONTENT, true, typeSettings.getComparisonDate());
                 relevantNodeMetadata.add(currentMetadata);
                 return Optional.empty();
             } else {
@@ -136,7 +132,7 @@ public class AemReplicationMetadataValidator implements DocumentViewXmlValidator
                 return Collections.singletonList(new ValidationMessage(validationMessageSeverity, "Invalid last modification date found", e));
             }
             currentMetadata.captureReplicationMetadata(node, agentNames);
-        } else if (node.getName().equals(NAME_JCR_CONTENT)) {
+        } else if (node.getName().equals(NameConstants.JCR_CONTENT)) {
             // capture replication metadata in jcr:content child node
             String parentNodePath = Text.getRelativeParent(nodeContext.getNodePath(), 1);
             if (currentMetadata.getPath().equals(parentNodePath)) {
